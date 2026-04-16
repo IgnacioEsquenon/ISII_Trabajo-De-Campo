@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Agenda — {{ medico }}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #1a1a1a; }
+    .container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+    header { margin-bottom: 1.5rem; }
+    header h1 { font-size: 20px; font-weight: 500; }
+    header p  { font-size: 13px; color: #666; margin-top: 3px; }
+    .alert { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 1rem; }
+    .alert-success { background: #e1f5ee; color: #085041; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .card { background: white; border: 0.5px solid #ddd; border-radius: 12px; padding: 1.25rem; }
+    .card h2 { font-size: 14px; font-weight: 500; margin-bottom: 1rem;
+               padding-bottom: 0.75rem; border-bottom: 0.5px solid #eee; }
+    label { display: block; font-size: 12px; color: #666; margin-bottom: 3px; margin-top: 10px; }
+    select, input[type="time"] { width: 100%; padding: 7px 10px; border: 0.5px solid #ccc;
+                                  border-radius: 8px; font-size: 13px; }
+    .check-row { display: flex; align-items: center; gap: 6px; margin-top: 10px; font-size: 13px; }
+    .errorlist { color: #a32d2d; font-size: 12px; margin-top: 4px; padding-left: 1rem; }
+    .btn-save { width: 100%; margin-top: 14px; padding: 9px; background: #1a73c8;
+                color: white; border: none; border-radius: 8px; font-size: 13px; cursor: pointer; }
+    .btn-save:hover { background: #1558a0; }
+    .dia-label { font-size: 11px; font-weight: 500; color: #999; text-transform: uppercase;
+                 letter-spacing: 0.05em; margin: 12px 0 6px; }
+    .bloque { display: flex; align-items: center; justify-content: space-between;
+              padding: 7px 10px; border-radius: 8px; border: 0.5px solid #ddd;
+              margin-bottom: 4px; background: white; }
+    .bloque.activo { border-color: #1a73c8; background: #eef5fd; }
+    .bloque-hora { font-size: 13px; font-weight: 500; }
+    .bloque.activo .bloque-hora { color: #0c447c; }
+    .badge { font-size: 11px; padding: 2px 8px; border-radius: 20px; margin-right: 6px; }
+    .badge-activo   { background: #e1f5ee; color: #085041; }
+    .badge-inactivo { background: #f1efe8; color: #5f5e5a; }
+    .btn-sm { font-size: 11px; padding: 3px 8px; border-radius: 4px; cursor: pointer;
+              border: 0.5px solid #ccc; background: transparent; color: #555;
+              text-decoration: none; margin-left: 4px; }
+    .btn-sm:hover { background: #f5f5f5; }
+    .btn-del { color: #a32d2d; border-color: #f09595; }
+    .btn-del:hover { background: #fcebeb; }
+    .empty { font-size: 12px; color: #aaa; padding: 6px 0; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>Agenda de {{ medico }}</h1>
+    <p>{{ medico.especialidad }} · Matrícula {{ medico.matricula }}</p>
+  </header>
+
+  {% for message in messages %}
+    <div class="alert alert-success">{{ message }}</div>
+  {% endfor %}
+
+  <div class="grid">
+
+    <div class="card">
+      <h2>Nuevo bloque horario</h2>
+      <form method="post">
+        {% csrf_token %}
+        <label>Día de la semana</label>
+        {{ form.dia_semana }}
+        {{ form.dia_semana.errors }}
+
+        <label>Hora inicio</label>
+        {{ form.hora_inicio }}
+        {{ form.hora_inicio.errors }}
+
+        <label>Hora fin</label>
+        {{ form.hora_fin }}
+        {{ form.hora_fin.errors }}
+
+        <div class="check-row">
+          {{ form.activo }}
+          <span>Bloque activo</span>
+        </div>
+        {{ form.non_field_errors }}
+
+        <button type="submit" class="btn-save">Guardar bloque</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Bloques configurados</h2>
+      {% if bloques_por_dia %}
+        {% for dia, bloques in bloques_por_dia.items %}
+          <div class="dia-label">{{ dia }}</div>
+          {% for bloque in bloques %}
+            <div class="bloque {% if bloque.activo %}activo{% endif %}">
+              <span class="bloque-hora">
+                {{ bloque.hora_inicio|time:"H:i" }} – {{ bloque.hora_fin|time:"H:i" }}
+              </span>
+              <div>
+                <span class="badge {% if bloque.activo %}badge-activo{% else %}badge-inactivo{% endif %}">
+                  {% if bloque.activo %}activo{% else %}inactivo{% endif %}
+                </span>
+                <a href="{% url 'toggle_bloque' bloque.id %}" class="btn-sm">
+                  {% if bloque.activo %}Pausar{% else %}Activar{% endif %}
+                </a>
+                <a href="{% url 'eliminar_bloque' bloque.id %}" class="btn-sm btn-del"
+                   onclick="return confirm('¿Eliminar este bloque?')">
+                  Eliminar
+                </a>
+              </div>
+            </div>
+          {% endfor %}
+        {% endfor %}
+      {% else %}
+        <p class="empty">No hay bloques configurados todavía.</p>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+</body>
+</html>
