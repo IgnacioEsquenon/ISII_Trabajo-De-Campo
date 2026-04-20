@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 
 # creamos los modelos para la app de gestión de turnos (en python las clases son modelos quien lo diria)
 # a su vez, cada clase representa una tabla en la base de datos
@@ -28,10 +29,17 @@ class BloqueHorario(models.Model):
         (0, 'Lunes'), (1, 'Martes'), (2, 'Miércoles'),
         (3, 'Jueves'), (4, 'Viernes'), (5, 'Sábado'), (6, 'Domingo'),
     ]
+
+    DURACIONES = [
+        (30, '30 minutos'),
+        (60, '60 minutos'),
+    ]
+
     medico      = models.ForeignKey(Medico, on_delete=models.CASCADE, related_name='bloques')
     dia_semana  = models.IntegerField(choices=DIAS)
     hora_inicio = models.TimeField()
     hora_fin    = models.TimeField()
+    duracion_turno = models.IntegerField(choices=DURACIONES, default=30)
     activo      = models.BooleanField(default=True)
 
     class Meta:
@@ -39,7 +47,29 @@ class BloqueHorario(models.Model):
         unique_together = ['medico', 'dia_semana', 'hora_inicio']
 
     def __str__(self):
-        return f"{self.get_dia_semana_display()} {self.hora_inicio}–{self.hora_fin}"
+        return f"{self.get_dia_semana_display()} {self.hora_inicio}–{self.hora_fin}" 
+    
+    def clean(self):
+        super().clean() 
+
+        # 1. Validación Lógica (Esta se puede hacer siempre porque usa los datos del formulario)
+        if self.hora_inicio and self.hora_fin:
+            if self.hora_inicio >= self.hora_fin:
+                raise ValidationError("La hora de inicio debe ser anterior a la hora de fin.")
+
+            # 2. Validación de Superposición (Requisito T1-08)
+            if self.medico_id is not None:
+                bloques_existentes = BloqueHorario.objects.filter(
+                    medico_id=self.medico_id, 
+                    dia_semana=self.dia_semana
+                )
+                
+                if self.pk:
+                    bloques_existentes = bloques_existentes.exclude(pk=self.pk)
+
+                for bloque in bloques_existentes:
+                    if self.hora_inicio < bloque.hora_fin and self.hora_fin > bloque.hora_inicio:
+                        raise ValidationError(f"El horario se superpone con un bloque existente: {bloque.hora_inicio.strftime('%H:%M')} a {bloque.hora_fin.strftime('%H:%M')}.")
 
 class Turno(models.Model):
     ESTADOS = [

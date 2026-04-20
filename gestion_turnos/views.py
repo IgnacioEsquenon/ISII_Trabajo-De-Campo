@@ -1,23 +1,51 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from .models import Medico, BloqueHorario
-from .forms import BloqueHorarioForm
+from .forms import BloqueHorarioForm 
+from datetime import date, datetime, timedelta
+from .models import Turno
+
 
 # Creamos las vistas 
 @login_required
 def agenda_medico(request, medico_id):
-    medico  = get_object_or_404(Medico, pk=medico_id, user=request.user)
-    bloques = medico.bloques.all()
+    # Seguridad: Aseguramos que el médico solo vea su propia agenda
+    medico = get_object_or_404(Medico, pk=medico_id, user=request.user)
+    bloques = medico.bloques.all() 
+
+    turnos_por_fecha = {}
+
+    # 3. Lógica para mostrar turnos existentes (GET)
+    # Esto hace que la agenda no aparezca vacía si ya hay turnos creados
+    hoy = date.today()
+    turnos_db = Turno.objects.filter(
+        bloque__medico=medico, 
+        fecha__gte=hoy
+    ).order_by('fecha', 'hora')
+
+    for t in turnos_db:
+        if t.fecha not in turnos_por_fecha:
+            turnos_por_fecha[t.fecha] = []
+        turnos_por_fecha[t.fecha].append(t)
 
     if request.method == 'POST':
         form = BloqueHorarioForm(request.POST)
         if form.is_valid():
-            bloque        = form.save(commit=False)
+            bloque = form.save(commit=False)
             bloque.medico = medico
-            bloque.save()
-            messages.success(request, 'Bloque creado correctamente.')
-            return redirect('agenda_medico', medico_id=medico.id)
+            
+            try:
+                bloque.full_clean() # Esto ejecuta el def clean() del models.py
+                bloque.save()
+
+                generar_turnos_automaticos(bloque) # Generamos los turnos automáticamente al crear el bloque
+                messages.success(request, 'Bloque y turnos creados correctamente.')
+                return redirect('agenda_medico', medico_id=medico.id)
+            except ValidationError as e:
+                # Si falla la validación, le pasamos el error al formulario
+                form.add_error(None, e) 
     else:
         form = BloqueHorarioForm()
 
@@ -30,6 +58,7 @@ def agenda_medico(request, medico_id):
         'medico':         medico,
         'form':           form,
         'bloques_por_dia': bloques_por_dia,
+        'turnos_por_fecha': turnos_por_fecha,
     })
 
 def toggle_bloque(request, bloque_id):
@@ -45,3 +74,37 @@ def eliminar_bloque(request, bloque_id):
     messages.success(request, 'Bloque eliminado.')
     return redirect('agenda_medico', medico_id=medico_id)
 
+def generar_turnos_automaticos(bloque, semanas_a_generar=4):
+    hoy = date.today()
+    
+    # Encontrar la próxima fecha real que coincida con el día de la semana del bloque
+    dias_para_el_proximo = (bloque.dia_semana - hoy.weekday()) % 7
+    proxima_fecha = hoy + timedelta(days=dias_para_el_proximo)
+    
+    # Armamos una lista con las fechas exactas (ej: como un mes tiene 4 semanas, generamos 4 fechas)
+    fechas = [proxima_fecha + timedelta(weeks=i) for i in range(semanas_a_generar)]
+    
+    # Matematicas niño (Dividir el bloque en turnos)
+    inicio_dt = datetime.combine(hoy, bloque.hora_inicio)
+    fin_dt = datetime.combine(hoy, bloque.hora_fin)
+    
+    turnos_a_crear = []
+    
+    for fecha_exacta in fechas:
+        tiempo_actual = inicio_dt
+        
+        # Mientras el inicio del turno + la duración no supere la hora de fin del bloque
+        while (tiempo_actual + timedelta(minutes=bloque.duracion_turno)) <= fin_dt:
+            turnos_a_crear.append(
+                Turno(
+                    bloque=bloque,
+                    fecha=fecha_exacta,
+                    hora=tiempo_actual.time(),
+                    estado='disponible'
+                )
+            )
+            #Avanza el reloj a la siguiente franja (pasar de 10 a 10:30 por ej)
+            tiempo_actual += timedelta(minutes=bloque.duracion_turno)
+            
+    if turnos_a_crear:
+        Turno.objects.bulk_create(turnos_a_crear)

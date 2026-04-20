@@ -42,6 +42,18 @@
     .btn-del { color: #a32d2d; border-color: #f09595; }
     .btn-del:hover { background: #fcebeb; }
     .empty { font-size: 12px; color: #aaa; padding: 6px 0; }
+    .turnos-section { margin-top: 1.5rem; }
+    details { background: white; border: 0.5px solid #ddd; border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
+    summary { padding: 12px 15px; font-size: 14px; font-weight: 500; cursor: pointer; background: #fafafa; outline: none; list-style: none; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
+    summary:hover { background: #f1f1f1; }
+    summary::-webkit-details-marker { display: none; } /* Oculta la flechita fea por defecto */
+    details[open] summary { border-bottom: 0.5px solid #ddd; background: #fff; }
+    
+    .turnos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; padding: 15px; }
+    .turno-box { padding: 10px; text-align: center; border-radius: 8px; border: 1px solid #ddd; font-size: 12px; }
+    .turno-disponible { background: #eef5fd; border-color: #cce0f5; color: #0c447c; }
+    .turno-reservado { background: #fcebeb; border-color: #f09595; color: #a32d2d; }
+    .turno-box strong { font-size: 15px; display: block; margin-bottom: 3px; }
   </style>
 </head>
 <body>
@@ -73,6 +85,10 @@
         <label>Hora fin</label>
         {{ form.hora_fin }}
         {{ form.hora_fin.errors }}
+
+        <label>Duración de los turnos</label>
+        {{ form.duracion_turno }}
+        {{ form.duracion_turno.errors }}
 
         <div class="check-row">
           {{ form.activo }}
@@ -113,6 +129,31 @@
         <p class="empty">No hay bloques configurados todavía.</p>
       {% endif %}
     </div>
+
+<div class="card turnos-section">
+    <h2>Próximos Turnos (4 semanas)</h2>
+    {% if turnos_por_fecha %}
+      {% for fecha, lista_turnos in turnos_por_fecha.items %}
+        <details>
+          <summary>
+            <span>🗓️ {{ fecha|date:"l, d \d\e F \d\e Y" }}</span>
+            <span class="badge badge-inactivo" style="font-size: 12px; padding: 4px 10px;">{{ lista_turnos|length }} turnos</span>
+          </summary>
+          
+          <div class="turnos-grid">
+            {% for turno in lista_turnos %}
+              <div class="turno-box {% if turno.estado == 'disponible' %}turno-disponible{% else %}turno-reservado{% endif %}">
+                <strong>{{ turno.hora|time:"H:i" }}</strong>
+                <span>{{ turno.get_estado_display }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        </details>
+      {% endfor %}
+    {% else %}
+      <p class="empty">Carga un bloque horario arriba para generar la agenda de los próximos días.</p>
+    {% endif %}
+  </div>
 
   </div>
 </div>
