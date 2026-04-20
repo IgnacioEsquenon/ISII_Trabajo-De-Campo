@@ -30,6 +30,5 @@ def home(request):
 urlpatterns = [
     path('', home, name='home'),
     path('medico/<int:medico_id>/agenda/', views.agenda_medico,    name='agenda_medico'),
-    path('bloque/<int:bloque_id>/toggle/', views.toggle_bloque,    name='toggle_bloque'),
     path('bloque/<int:bloque_id>/eliminar/', views.eliminar_bloque, name='eliminar_bloque'),
 ]

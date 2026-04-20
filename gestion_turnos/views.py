@@ -11,13 +11,13 @@ from .models import Turno
 # Creamos las vistas 
 @login_required
 def agenda_medico(request, medico_id):
-    # Seguridad: Aseguramos que el médico solo vea su propia agenda
+    # El médico solo ve su propia agenda
     medico = get_object_or_404(Medico, pk=medico_id, user=request.user)
     bloques = medico.bloques.all() 
 
     turnos_por_fecha = {}
 
-    # 3. Lógica para mostrar turnos existentes (GET)
+    # Logica para mostrar turnos existentes 
     # Esto hace que la agenda no aparezca vacía si ya hay turnos creados
     hoy = date.today()
     turnos_db = Turno.objects.filter(
@@ -61,11 +61,7 @@ def agenda_medico(request, medico_id):
         'turnos_por_fecha': turnos_por_fecha,
     })
 
-def toggle_bloque(request, bloque_id):
-    bloque        = get_object_or_404(BloqueHorario, pk=bloque_id)
-    bloque.activo = not bloque.activo
-    bloque.save()
-    return redirect('agenda_medico', medico_id=bloque.medico.id)
+
 
 def eliminar_bloque(request, bloque_id):
     bloque    = get_object_or_404(BloqueHorario, pk=bloque_id)

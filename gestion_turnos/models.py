@@ -40,7 +40,7 @@ class BloqueHorario(models.Model):
     hora_inicio = models.TimeField()
     hora_fin    = models.TimeField()
     duracion_turno = models.IntegerField(choices=DURACIONES, default=30)
-    activo      = models.BooleanField(default=True)
+    #activo      = models.BooleanField(default=True)
 
     class Meta:
         ordering = ['dia_semana', 'hora_inicio']

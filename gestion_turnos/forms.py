@@ -4,7 +4,7 @@ from .models import BloqueHorario
 class BloqueHorarioForm(forms.ModelForm):
     class Meta:
         model = BloqueHorario
-        fields = ['dia_semana', 'hora_inicio', 'hora_fin','duracion_turno' ,'activo']
+        fields = ['dia_semana', 'hora_inicio', 'hora_fin','duracion_turno' ] 
         widgets = {
             'hora_inicio': forms.TimeInput(format='%H:%M', attrs={'type': 'time'}),
             'hora_fin': forms.TimeInput(format='%H:%M', attrs={'type': 'time'}),

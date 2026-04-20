@@ -7,9 +7,29 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #1a1a1a; }
     .container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
-    header { margin-bottom: 1.5rem; }
+    header { 
+      margin-bottom: 1.5rem; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: flex-start; 
+    }
     header h1 { font-size: 20px; font-weight: 500; }
     header p  { font-size: 13px; color: #666; margin-top: 3px; }
+
+    .btn-logout { 
+      background: transparent; 
+      border: 1px solid #a32d2d; 
+      color: #a32d2d; 
+      padding: 6px 12px; 
+      border-radius: 6px; 
+      font-size: 12px; 
+      cursor: pointer; 
+      transition: all 0.2s; 
+    }
+    .btn-logout:hover { 
+      background: #a32d2d; 
+      color: white; 
+    }
     .alert { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 1rem; }
     .alert-success { background: #e1f5ee; color: #085041; }
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
@@ -60,8 +80,17 @@
 <div class="container">
 
   <header>
+    <div>
     <h1>Agenda de {{ medico }}</h1>
-    <p>{{ medico.especialidad }} · Matrícula {{ medico.matricula }}</p>
+    <p> Matrícula N° {{ medico.matricula }}</p>
+    </div>
+    <form action="{% url 'logout' %}" method="post" style="margin: 0;">
+      {% csrf_token %}
+      <button type="submit" class="btn-logout">
+        Cerrar Sesión
+      </button>
+    </form>
+
   </header>
 
   {% for message in messages %}
@@ -89,11 +118,6 @@
         <label>Duración de los turnos</label>
         {{ form.duracion_turno }}
         {{ form.duracion_turno.errors }}
-
-        <div class="check-row">
-          {{ form.activo }}
-          <span>Bloque activo</span>
-        </div>
         {{ form.non_field_errors }}
 
         <button type="submit" class="btn-save">Guardar bloque</button>
@@ -111,12 +135,7 @@
                 {{ bloque.hora_inicio|time:"H:i" }} – {{ bloque.hora_fin|time:"H:i" }}
               </span>
               <div>
-                <span class="badge {% if bloque.activo %}badge-activo{% else %}badge-inactivo{% endif %}">
-                  {% if bloque.activo %}activo{% else %}inactivo{% endif %}
-                </span>
-                <a href="{% url 'toggle_bloque' bloque.id %}" class="btn-sm">
-                  {% if bloque.activo %}Pausar{% else %}Activar{% endif %}
-                </a>
+                
                 <a href="{% url 'eliminar_bloque' bloque.id %}" class="btn-sm btn-del"
                    onclick="return confirm('¿Eliminar este bloque?')">
                   Eliminar
