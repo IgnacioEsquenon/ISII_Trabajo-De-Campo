@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Registro de Profesionales</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #1a1a1a; }
+    .container { max-width: 500px; margin: 5rem auto; padding: 0 1rem; }
+    .card { background: white; border: 0.5px solid #ddd; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    h2 { font-size: 20px; font-weight: 500; margin-bottom: 5px; }
+    p.subtitle { font-size: 13px; color: #666; margin-bottom: 20px; }
+    
+    /* Estilos para que los campos de Django se vean bien */
+    label { display: block; font-size: 13px; font-weight: 500; margin-top: 15px; margin-bottom: 5px; color: #333; }
+    input[type="text"], input[type="password"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; }
+    .helptext { display: block; font-size: 11px; color: #888; margin-top: 4px; }
+    ul.errorlist { color: #a32d2d; font-size: 12px; margin-top: 4px; padding-left: 1rem; }
+    
+    .btn-save { width: 100%; margin-top: 25px; padding: 12px; background: #1a73c8; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+    .btn-save:hover { background: #1558a0; }
+    .enlace-login { text-align: center; display: block; margin-top: 20px; font-size: 13px; color: #666; text-decoration: none; }
+    .enlace-login strong { color: #1a73c8; transition: color 0.2s; }
+    .enlace-login:hover strong { color: #1558a0; text-decoration: underline; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <h2>Registro para Profesionales</h2>
+    <p class="subtitle">Creá tu cuenta para gestionar tu agenda de turnos.</p>
+    
+    <form method="post">
+      {% csrf_token %}
+      
+      {{ form.as_p }}
+      
+      <button type="submit" class="btn-save">Registrarme y Entrar</button>
+    </form>
+    
+    <a href="{% url 'login' %}" class="enlace-login">¿Ya tenés cuenta? <strong>Iniciá sesión acá</strong></a>
+  </div>
+</div>
+</body>
+</html>

@@ -1,12 +1,13 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from datetime import datetime, date
 
 # creamos los modelos para la app de gestión de turnos (en python las clases son modelos quien lo diria)
 # a su vez, cada clase representa una tabla en la base de datos
 # django es el que crea dichas tablas
 
-class Medico(models.Model):
+class Medico(models.Model):    
     user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True)
     nombre = models.CharField(max_length=100)
     especialidad = models.CharField(max_length=100)
@@ -16,6 +17,7 @@ class Medico(models.Model):
         return f"Dr. {self.nombre} ({self.especialidad})"
 
 class Paciente(models.Model):
+    user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True)
     nombre = models.CharField(max_length=100)
     apellido = models.CharField(max_length=100)
     dni = models.CharField(max_length=20, unique=True)
@@ -63,9 +65,20 @@ class BloqueHorario(models.Model):
                     medico_id=self.medico_id, 
                     dia_semana=self.dia_semana
                 )
-                
-                if self.pk:
-                    bloques_existentes = bloques_existentes.exclude(pk=self.pk)
+
+            # Combinamos las horas con la fecha de hoy para poder restarlas matemáticamente
+            inicio_dt = datetime.combine(date.today(), self.hora_inicio)
+            fin_dt = datetime.combine(date.today(), self.hora_fin)
+            
+            diferencia = fin_dt - inicio_dt
+            minutos_totales = diferencia.total_seconds() / 60
+
+            # Verificamos si los minutos del bloque son menores a la duración del turno
+            if minutos_totales < self.duracion_turno:
+                raise ValidationError(f"Error: El bloque dura solo {int(minutos_totales)} minutos, pero elegiste turnos de {self.duracion_turno} minutos. El bloque debe ser igual o más largo que un turno.")
+            # --------------------------------------------------------
+            if self.pk:
+                bloques_existentes = bloques_existentes.exclude(pk=self.pk)
 
                 for bloque in bloques_existentes:
                     if self.hora_inicio < bloque.hora_fin and self.hora_fin > bloque.hora_inicio:

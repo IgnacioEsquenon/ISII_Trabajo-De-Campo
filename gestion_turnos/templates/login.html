@@ -17,6 +17,11 @@
            color: white; border: none; border-radius: 8px; font-size: 13px; cursor: pointer; }
     .btn:hover { background: #1558a0; }
     .error { font-size: 12px; color: #a32d2d; margin-top: 8px; }
+    
+    /* NUEVO ESTILO: Para el enlace de registro */
+    .enlace-registro { display: block; text-align: center; margin-top: 1.5rem; font-size: 13px; color: #666; text-decoration: none; }
+    .enlace-registro strong { color: #1a73c8; transition: color 0.2s; }
+    .enlace-registro:hover strong { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -33,6 +38,10 @@
       {% endif %}
       <button type="submit" class="btn">Entrar</button>
     </form>
+
+    <a href="{% url 'seleccionar_registro' %}" class="enlace-registro">
+      ¿No tenés cuenta? <strong>Crear una cuenta</strong>
+    </a>
   </div>
 </body>
 </html>

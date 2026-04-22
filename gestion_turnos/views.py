@@ -2,11 +2,58 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.contrib.auth import login
 from .models import Medico, BloqueHorario
+from .forms import RegistroMedicoForm, RegistroPacienteForm
 from .forms import BloqueHorarioForm 
 from datetime import date, datetime, timedelta
 from .models import Turno
 
+def seleccionar_registro(request):
+    # Si el usuario ya está logueado, no tiene sentido que se registre
+    if request.user.is_authenticated:
+        return redirect('home')
+        
+    return render(request, 'seleccionar_registro.html')
+
+def registro_medico(request):
+    # Si ya está logueado, lo pateamos a su home
+    if request.user.is_authenticated:
+        return redirect('home')
+
+    if request.method == 'POST':
+        form = RegistroMedicoForm(request.POST)
+        if form.is_valid():
+            # Esto dispara el def save() gigante en forms.py
+            user = form.save() 
+            
+            # Autologueo de Django
+            login(request, user) 
+            
+            # Como ahora es medico, el semáforo lo va a derivar a su agenda
+            return redirect('home')
+    else:
+        form = RegistroMedicoForm()
+
+    return render(request, 'registro_medico.html', {'form': form})
+
+def registro_paciente(request):
+    # Si ya está logueado, al semáforo central
+    if request.user.is_authenticated:
+        return redirect('home')
+
+    if request.method == 'POST':
+        form = RegistroPacienteForm(request.POST)
+        if form.is_valid():
+            user = form.save() 
+            login(request, user) # Autologueo
+            
+            # lo va a derivar a la vista del paciente en construccion (home_paciente.html)
+            return redirect('home')
+    else:
+        form = RegistroPacienteForm()
+
+    return render(request, 'registro_paciente.html', {'form': form})
 
 # Creamos las vistas 
 @login_required
