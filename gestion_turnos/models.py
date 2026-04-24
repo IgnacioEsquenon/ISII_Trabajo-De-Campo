@@ -54,33 +54,37 @@ class BloqueHorario(models.Model):
     def clean(self):
         super().clean() 
 
-        # 1. Validación Lógica (Esta se puede hacer siempre porque usa los datos del formulario)
+        # 1. Validación Lógica
         if self.hora_inicio and self.hora_fin:
             if self.hora_inicio >= self.hora_fin:
                 raise ValidationError("La hora de inicio debe ser anterior a la hora de fin.")
 
-            # 2. Validación de Superposición (Requisito T1-08)
-            if self.medico_id is not None:
-                bloques_existentes = BloqueHorario.objects.filter(
-                    medico_id=self.medico_id, 
-                    dia_semana=self.dia_semana
-                )
-
-            # Combinamos las horas con la fecha de hoy para poder restarlas matemáticamente
             inicio_dt = datetime.combine(date.today(), self.hora_inicio)
             fin_dt = datetime.combine(date.today(), self.hora_fin)
             
             diferencia = fin_dt - inicio_dt
             minutos_totales = diferencia.total_seconds() / 60
 
-            # Verificamos si los minutos del bloque son menores a la duración del turno
             if minutos_totales < self.duracion_turno:
                 raise ValidationError(f"Error: El bloque dura solo {int(minutos_totales)} minutos, pero elegiste turnos de {self.duracion_turno} minutos. El bloque debe ser igual o más largo que un turno.")
-            # --------------------------------------------------------
-            if self.pk:
-                bloques_existentes = bloques_existentes.exclude(pk=self.pk)
 
+            # 2. Validación de Superposición (Requisito T1-08)
+            if self.medico_id is not None:
+                # Buscamos todos los bloques de ese médico para ese día
+                bloques_existentes = BloqueHorario.objects.filter(
+                    medico_id=self.medico_id, 
+                    dia_semana=self.dia_semana
+                )
+
+                # Si el bloque ya existe (estamos editando), lo excluimos de la lista
+                if self.pk:
+                    bloques_existentes = bloques_existentes.exclude(pk=self.pk)
+
+                # ACÁ ESTÁ EL ARREGLO: 
+                # El bucle FOR ahora está a la misma altura que el if self.pk, 
+                # por lo que se ejecuta SIEMPRE, sea un bloque nuevo o editado.
                 for bloque in bloques_existentes:
+                    
                     if self.hora_inicio < bloque.hora_fin and self.hora_fin > bloque.hora_inicio:
                         raise ValidationError(f"El horario se superpone con un bloque existente: {bloque.hora_inicio.strftime('%H:%M')} a {bloque.hora_fin.strftime('%H:%M')}.")
 

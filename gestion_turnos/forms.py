@@ -16,7 +16,6 @@ class RegistroMedicoForm(UserCreationForm):
         # Le decimos a Django qué campos mostrar arriba de todo
         fields = UserCreationForm.Meta.fields + ('nombre', 'apellido')
 
-    # ACÁ ESTÁ LA MAGIA: Sobreescribimos el método save()
     def save(self, commit=True):
         # 1. Guardamos el User de Django (encripta la contraseña automáticamente)
         user = super().save(commit=False)

@@ -6,6 +6,7 @@ from gestion_turnos import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', views.home_principal, name='home_principal'),
     path('registro/', views.seleccionar_registro, name='seleccionar_registro'),
     path('registro/medico/', views.registro_medico, name='registro_medico'),
     path('registro/paciente/', views.registro_paciente, name='registro_paciente'),

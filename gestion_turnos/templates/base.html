@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}MEDORA{% endblock %}</title>
+  
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #1a1a1a; }
+    
+    /* Estilos del Navbar */
+    .navbar { display: flex; justify-content: space-between; padding: 1rem 5%; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); align-items: center; }
+    .logo { font-size: 24px; font-weight: bold; text-decoration: none; color: #1a73c8; }
+    .nav-links { display: flex; align-items: center; gap: 15px; }
+    .btn-logout-nav { background: transparent; border: none; color: #a32d2d; font-weight: 500; cursor: pointer; font-size: 15px; }
+  </style>
+
+  {% block extra_css %}{% endblock %}
+
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="{% url 'home_principal' %}" class="logo">⚕️ MEDORA</a>
+    <div class="nav-links">
+        {% if user.is_authenticated %}
+            <form action="{% url 'logout' %}" method="post" style="margin: 0;">
+                {% csrf_token %}
+                <button type="submit" class="btn-logout-nav">Cerrar Sesión</button>
+            </form>
+        {% else %}
+            <a href="{% url 'login' %}" style="text-decoration: none; color: #1a73c8; font-weight: 500;">Iniciar sesión</a>
+        {% endif %}
+    </div>
+  </nav>
+
+  <main>
+    {% block content %}
+    {% endblock %}
+  </main>
+
+</body>
+</html>

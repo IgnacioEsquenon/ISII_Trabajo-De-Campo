@@ -9,6 +9,21 @@ from .forms import BloqueHorarioForm
 from datetime import date, datetime, timedelta
 from .models import Turno
 
+def home_principal(request):
+    # Si el usuario ya está logueado, lo mandamos a su panel
+    if request.user.is_authenticated:
+       # 2. ¿Es un médico? 
+        # (Django crea automáticamente la propiedad 'medico' en el user por la relación 1 a 1)
+        if hasattr(request.user, 'medico'):
+            # Si tiene perfil de médico, lo mandamos directo a su agenda
+            return redirect('agenda_medico', medico_id=request.user.medico.id)
+        
+        # 3. Si no es médico, asumimos que es paciente
+        else:
+            return redirect('home_paciente')
+        
+    return render(request, 'home_principal.html')
+
 def seleccionar_registro(request):
     # Si el usuario ya está logueado, no tiene sentido que se registre
     if request.user.is_authenticated:
@@ -55,7 +70,7 @@ def registro_paciente(request):
 
     return render(request, 'registro_paciente.html', {'form': form})
 
-# Creamos las vistas 
+ 
 @login_required
 def agenda_medico(request, medico_id):
     # El médico solo ve su propia agenda
@@ -146,7 +161,7 @@ def generar_turnos_automaticos(bloque, semanas_a_generar=4):
                     estado='disponible'
                 )
             )
-            #Avanza el reloj a la siguiente franja (pasar de 10 a 10:30 por ej)
+            # Avanza el reloj a la siguiente franja (pasar de 10 a 10:30 por ej)
             tiempo_actual += timedelta(minutes=bloque.duracion_turno)
             
     if turnos_a_crear:

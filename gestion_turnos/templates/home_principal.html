@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión Médica MEDORA — Encuentra tu especialista</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: #f8f9fa; color: #333; }
+    
+    /* Navbar */
+    .navbar { display: flex; justify-content: space-between; align-items: center; padding: 1rem 5%; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: fixed; top: 0; width: 100%; z-index: 100; }
+    .logo { font-size: 22px; font-weight: 700; color: #1a73c8; text-decoration: none; }
+    .nav-links { display: flex; gap: 15px; align-items: center; }
+    .btn-login { color: #666; text-decoration: none; font-weight: 500; font-size: 15px; transition: color 0.2s; }
+    .btn-login:hover { color: #1a73c8; }
+    .btn-register { background: #1a73c8; color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-weight: 500; font-size: 15px; transition: background 0.2s; }
+    .btn-register:hover { background: #1558a0; }
+
+    /* Hero Section (El bloque principal tipo Doctoralia) */
+    .hero { margin-top: 70px; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); padding: 5rem 5%; text-align: center; }
+    .hero h1 { font-size: 40px; color: #0d47a1; margin-bottom: 15px; letter-spacing: -0.5px; }
+    .hero p { font-size: 18px; color: #444; margin-bottom: 40px; max-width: 600px; margin-left: auto; margin-right: auto; }
+
+    /* El Buscador Central */
+    .search-box { background: white; padding: 10px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.08); display: flex; max-width: 700px; margin: 0 auto; gap: 10px; }
+    .search-input { flex: 1; padding: 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; outline: none; transition: border-color 0.2s; }
+    .search-input:focus { border-color: #1a73c8; }
+    .btn-search { background: #1a73c8; color: white; border: none; padding: 0 30px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+    .btn-search:hover { background: #1558a0; transform: translateY(-2px); }
+
+    /* Tarjetas de Beneficios / Especialidades */
+    .features { padding: 5rem 5%; max-width: 1200px; margin: 0 auto; }
+    .features-title { text-align: center; font-size: 28px; margin-bottom: 3rem; color: #1a1a1a; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
+    .card { background: white; padding: 2rem; border-radius: 12px; border: 1px solid #eaeaea; text-align: center; transition: 0.3s; }
+    .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); border-color: #1a73c8; }
+    .card-icon { font-size: 40px; margin-bottom: 15px; }
+    .card h3 { margin-bottom: 10px; color: #1a1a1a; }
+    .card p { color: #666; font-size: 14px; line-height: 1.5; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .search-box { flex-direction: column; background: transparent; box-shadow: none; padding: 0; }
+      .search-input { width: 100%; margin-bottom: 10px; }
+      .btn-search { width: 100%; padding: 15px; }
+      .hero h1 { font-size: 32px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="{% url 'home_principal' %}" class="logo">⚕️ MEDORA</a>
+    <div class="nav-links">
+    {% if user.is_authenticated %}
+        <span style="color: #666; font-weight: 500; margin-right: 15px;">Hola, {{ user.first_name }}</span>
+        <a href="/admin/logout/" class="btn-login" style="color: #a32d2d;">Cerrar sesión</a>
+    {% else %}
+        <a href="{% url 'login' %}" class="btn-login">Iniciar sesión</a>
+        <a href="{% url 'seleccionar_registro' %}" class="btn-register">Crear cuenta</a>
+    {% endif %}
+  </div>
+  </nav>
+
+  <header class="hero">
+    <h1>Encontrá a tu especialista y pedí turno</h1>
+    <p>Muchos profesionales de la salud confiables, listos para atenderte cuando lo necesites.</p>
+    
+    <form class="search-box" action="#" method="GET">
+      <input type="text" class="search-input" placeholder="Ej. Cardiólogo, Pediatra o nombre del médico..." required>
+      <input type="text" class="search-input" placeholder="¿En qué ciudad o zona?">
+      <button type="submit" class="btn-search">Buscar</button>
+    </form>
+  </header>
+
+  <section class="features">
+    <h2 class="features-title">¿Por qué elegir nuestra plataforma?</h2>
+    <div class="grid">
+      
+      <div class="card">
+        <div class="card-icon">🔍</div>
+        <h3>Búsqueda Rápida</h3>
+        <p>Filtrá profesionales por especialidad, cercanía y obras sociales aceptadas de forma inmediata.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">📅</div>
+        <h3>Agenda 24/7</h3>
+        <p>No esperes a que el consultorio esté abierto. Reservá tu turno médico a cualquier hora desde el celular.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">⭐</div>
+        <h3>Opiniones Reales</h3>
+        <p>Ve las valoraciones para elegir al profesional que mejor se adapte a tus necesidades.</p>
+      </div>
+
+    </div>
+  </section>
+
+</body>
+</html>
