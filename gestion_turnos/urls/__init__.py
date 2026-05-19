@@ -1,4 +1,3 @@
-#Solo se incluyen, mas no se definen las rutas
 from django.urls import path, include
 
 urlpatterns = [
