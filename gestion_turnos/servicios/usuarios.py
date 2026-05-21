@@ -16,12 +16,15 @@ def registrar_medico(form):
     user.last_name  = form.cleaned_data['apellido']
     user.save()
 
-    Medico.objects.create(
+    medico = Medico.objects.create(
         user         = user,
         nombre       = f"{form.cleaned_data['nombre']} {form.cleaned_data['apellido']}",
         especialidad = form.cleaned_data['especialidad'],
         matricula    = form.cleaned_data['matricula']
     )
+
+    # Muchos a muchos se asigna después del save()
+    medico.obras_sociales.set(form.cleaned_data['obras_sociales'])
     return user
 
 def registrar_paciente(form):

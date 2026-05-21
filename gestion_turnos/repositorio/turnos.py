@@ -22,4 +22,12 @@ def obtener_bloques_por_dia(medico):
 
 def guardar_turnos(bloque, turnos_data):
     objetos = [Turno(bloque=bloque, **t) for t in turnos_data]
-    Turno.objects.bulk_create(objetos)
+    Turno.objects.bulk_create(objetos) 
+
+def borrar_turnos_futuros(bloque):
+    from datetime import date
+    Turno.objects.filter(
+        bloque=bloque,
+        fecha__gte=date.today(),
+        estado='disponible'       # solo borramos los que no están reservados
+    ).delete()

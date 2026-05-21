@@ -59,7 +59,15 @@
   .turno-box { padding: 10px; text-align: center; border-radius: 8px; border: 1px solid #ddd; font-size: 12px; }
   .turno-disponible { background: #eef5fd; border-color: #cce0f5; color: #0c447c; }
   .turno-reservado { background: #fcebeb; border-color: #f09595; color: #a32d2d; }
-  .turno-box strong { font-size: 15px; display: block; margin-bottom: 3px; }
+  .turno-box strong { font-size: 15px; display: block; margin-bottom: 3px; } 
+
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 100; justify-content: center; align-items: center; }
+.modal-overlay.active { display: flex; }
+.modal { background: white; border-radius: 12px; padding: 1.5rem; width: 100%; max-width: 380px; border: 0.5px solid #ddd; }
+.modal h2 { font-size: 14px; font-weight: 500; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 0.5px solid #eee; }
+.modal-actions { display: flex; gap: 8px; margin-top: 14px; }
+.btn-cancel { flex: 1; padding: 9px; background: transparent; border: 0.5px solid #ccc; border-radius: 8px; font-size: 13px; cursor: pointer; }
+.btn-cancel:hover { background: #f5f5f5; }
 </style>
 {% endblock %}
 
@@ -111,17 +119,24 @@
           <div class="dia-label">{{ dia }}</div>
           {% for bloque in bloques %}
             <div class="bloque {% if bloque.activo %}activo{% endif %}">
-              <span class="bloque-hora">
-                {{ bloque.hora_inicio|time:"H:i" }} – {{ bloque.hora_fin|time:"H:i" }}
-              </span>
-              <div>
-                
-                <a href="{% url 'eliminar_bloque' bloque.id %}" class="btn-sm btn-del"
-                   onclick="return confirm('¿Eliminar este bloque?')">
-                  Eliminar
-                </a>
-              </div>
-            </div>
+  <span class="bloque-hora">
+    {{ bloque.hora_inicio|time:"H:i" }} – {{ bloque.hora_fin|time:"H:i" }}
+  </span>
+  <div>
+    <a href="javascript:void(0)" class="btn-sm btn-edit"
+       data-id="{{ bloque.id }}"
+       data-dia="{{ bloque.dia_semana }}"
+       data-inicio="{{ bloque.hora_inicio|time:'H:i' }}"
+       data-fin="{{ bloque.hora_fin|time:'H:i' }}"
+       data-duracion="{{ bloque.duracion_turno }}">
+      Editar
+    </a>
+    <a href="{% url 'eliminar_bloque' bloque.id %}" class="btn-sm btn-del"
+       onclick="return confirm('¿Eliminar este bloque?')">
+      Eliminar
+    </a>
+  </div>
+</div>
           {% endfor %}
         {% endfor %}
       {% else %}
@@ -156,4 +171,68 @@
 
   </div>
 </div>
+<div class="modal-overlay" id="modalEditar">
+  <div class="modal">
+    <h2>Editar bloque horario</h2>
+    <form method="post" id="formEditar">
+      {% csrf_token %}
+      <label>Día de la semana</label>
+      <select name="dia_semana" id="modal-dia"></select>
+
+      <label>Hora inicio</label>
+      <input type="time" name="hora_inicio" id="modal-inicio">
+
+      <label>Hora fin</label>
+      <input type="time" name="hora_fin" id="modal-fin">
+
+      <label>Duración de los turnos</label>
+      <select name="duracion_turno" id="modal-duracion">
+        <option value="30">30 minutos</option>
+        <option value="60">60 minutos</option>
+      </select>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
+        <button type="submit" class="btn-save" style="flex:1; margin:0">Guardar cambios</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.btn-edit').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const id       = this.dataset.id;
+      const dia      = parseInt(this.dataset.dia);
+      const inicio   = this.dataset.inicio;
+      const fin      = this.dataset.fin;
+      const duracion = this.dataset.duracion;
+
+      const DIAS = [
+        [0,'Lunes'],[1,'Martes'],[2,'Miércoles'],
+        [3,'Jueves'],[4,'Viernes'],[5,'Sábado'],[6,'Domingo']
+      ];
+
+      const selectDia = document.getElementById('modal-dia');
+      selectDia.innerHTML = DIAS.map(([val, label]) =>
+        `<option value="${val}" ${val === dia ? 'selected' : ''}>${label}</option>`
+      ).join('');
+
+      document.getElementById('modal-inicio').value  = inicio;
+      document.getElementById('modal-fin').value     = fin;
+      document.getElementById('modal-duracion').value = duracion;
+      document.getElementById('formEditar').action   = `/medico/bloque/${id}/editar/`;
+
+      document.getElementById('modalEditar').classList.add('active');
+    });
+  });
+
+  function cerrarModal() {
+    document.getElementById('modalEditar').classList.remove('active');
+  }
+
+  document.getElementById('modalEditar').addEventListener('click', function(e) {
+    if (e.target === this) cerrarModal();
+  });
+</script>
 {% endblock %}

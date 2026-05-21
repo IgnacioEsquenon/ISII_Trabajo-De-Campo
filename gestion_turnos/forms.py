@@ -2,14 +2,19 @@ from django import forms
 from .models import BloqueHorario  
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
-from .models import Medico, Paciente
+from .models import Medico, Paciente, Especialidad, ObraSocial
 
 class RegistroMedicoForm(UserCreationForm):
     # Heredamos usuario y contraseñas automáticamente de UserCreationForm
     nombre = forms.CharField(max_length=100, required=True)
     apellido = forms.CharField(max_length=100, required=True)
-    especialidad = forms.CharField(max_length=100, required=True)
+    especialidad = forms.ModelChoiceField(queryset=Especialidad.objects.all(), required=True)
     matricula = forms.CharField(max_length=50, required=True)
+    obras_sociales = forms.ModelMultipleChoiceField(
+        queryset=ObraSocial.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        required=False
+    )
 
     class Meta(UserCreationForm.Meta):
         model = User
