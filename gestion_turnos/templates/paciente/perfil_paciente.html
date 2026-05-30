@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block title %}Mi perfil — MEDORA{% endblock %}
+
+{% block extra_css %}
+<style>
+  .container { max-width: 500px; margin: 2rem auto; padding: 0 1rem; }
+  .header { margin-bottom: 1.5rem; }
+  .header h1 { font-size: 18px; font-weight: 500; }
+  .header p  { font-size: 13px; color: #666; margin-top: 3px; }
+
+  .card { background: white; border: 0.5px solid #ddd; border-radius: 12px; padding: 1.75rem; }
+  .card h2 { font-size: 14px; font-weight: 500; margin-bottom: 1rem;
+             padding-bottom: 0.75rem; border-bottom: 0.5px solid #eee; }
+
+  label { display: block; font-size: 12px; color: #666; margin-bottom: 3px; margin-top: 14px; }
+  input[type="text"] { width: 100%; padding: 8px 10px; border: 0.5px solid #ccc;
+                       border-radius: 8px; font-size: 13px; }
+  input:focus { outline: none; border-color: #1a73c8; }
+  input[readonly] { background: #f9f9f9; color: #aaa; cursor: not-allowed; }
+
+  .alert-success { background: #e1f5ee; color: #085041; border-radius: 8px;
+                   padding: 10px 14px; font-size: 13px; margin-bottom: 1rem; }
+
+  .btn-guardar { width: 100%; margin-top: 1.5rem; padding: 10px; background: #1a73c8;
+                 color: white; border: none; border-radius: 8px; font-size: 14px;
+                 font-weight: 500; cursor: pointer; }
+  .btn-guardar:hover { background: #1558a0; }
+  .hint { font-size: 11px; color: #aaa; margin-top: 3px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <div class="header">
+    <h1>Mi perfil</h1>
+    <p>Editá tus datos personales.</p>
+  </div>
+
+  {% for message in messages %}
+    <div class="alert-success">{{ message }}</div>
+  {% endfor %}
+
+  <div class="card">
+    <h2>Datos personales</h2>
+    <form method="post">
+      {% csrf_token %}
+
+      <label>Nombre</label>
+      <input type="text" name="nombre" value="{{ paciente.nombre }}" required>
+
+      <label>Apellido</label>
+      <input type="text" name="apellido" value="{{ paciente.apellido }}" required>
+
+      <label>DNI</label>
+      <input type="text" value="{{ paciente.dni }}" readonly>
+      <p class="hint">El DNI no puede modificarse.</p>
+
+      <label>Teléfono</label>
+      <input type="text" name="telefono" value="{{ paciente.telefono|default:'' }}">
+
+      <label>Obra social</label>
+      <select name="obra_social">
+      <option value="">Sin obra social</option>
+      {% for os in obras_sociales %}
+      <option value="{{ os.id }}" {% if paciente.obra_social and paciente.obra_social.id == os.id %}selected{% endif %}>
+      {{ os.nombre }}
+      </option>
+      {% endfor %}
+      </select>
+
+      <label>Email</label>
+      <input type="text" value="{{ paciente.user.email }}" readonly>
+      <p class="hint">El email no puede modificarse desde acá.</p>
+
+      <button type="submit" class="btn-guardar">Guardar cambios</button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

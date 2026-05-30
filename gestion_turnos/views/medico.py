@@ -1,56 +1,81 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from datetime import date
+from django.core.exceptions import ValidationError
+from django.views.decorators.http import require_POST
 from gestion_turnos.models import Medico, BloqueHorario
 from gestion_turnos.forms import BloqueHorarioForm
-from gestion_turnos.servicios.turnos import crear_bloque_con_turnos
-from gestion_turnos.repositorio.turnos import obtener_turnos_por_fecha, obtener_bloques_por_dia
-from gestion_turnos.servicios.turnos import crear_bloque_con_turnos, editar_bloque_con_turnos
+from gestion_turnos.servicios.gestor_agenda import GestorAgenda
+from gestion_turnos.repositorio.turnos import obtener_turnos_por_fecha
 
 @login_required
 def agenda_medico(request, medico_id):
-    medico = get_object_or_404(Medico, pk=medico_id, user=request.user)
+    # Ownership check — el médico solo ve su propia agenda
+    medico  = get_object_or_404(Medico, pk=medico_id, user=request.user)
+    gestor  = GestorAgenda(medico)
 
     if request.method == 'POST':
         form = BloqueHorarioForm(request.POST)
         if form.is_valid():
-            ok, error = crear_bloque_con_turnos(medico, form)
-            if ok:
+            try:
+                gestor.crear_bloque_horario(
+                    dia_semana     = form.cleaned_data['dia_semana'],
+                    hora_inicio    = form.cleaned_data['hora_inicio'],
+                    hora_fin       = form.cleaned_data['hora_fin'],
+                    duracion_turno = form.cleaned_data['duracion_turno'],
+                )
                 messages.success(request, 'Bloque y turnos creados correctamente.')
                 return redirect('agenda_medico', medico_id=medico.id)
-            form.add_error(None, error)
+            except ValidationError as e:
+                form.add_error(None, e)
     else:
         form = BloqueHorarioForm()
 
     return render(request, 'agenda_medico.html', {
         'medico':           medico,
         'form':             form,
-        'bloques_por_dia':  obtener_bloques_por_dia(medico),
-        'turnos_por_fecha': obtener_turnos_por_fecha(medico, date.today()),
+        'bloques_por_dia':  gestor.obtener_estructura_bloques(),
+        'turnos_por_fecha': obtener_turnos_por_fecha(medico),
     })
 
+@login_required
+@require_POST  # ← solo acepta POST, evita eliminación por GET
 def eliminar_bloque(request, bloque_id):
-    bloque    = get_object_or_404(BloqueHorario, pk=bloque_id)
+    # Ownership check — solo el dueño del bloque puede eliminarlo
+    bloque    = get_object_or_404(BloqueHorario, pk=bloque_id, medico__user=request.user)
     medico_id = bloque.medico.id
-    bloque.delete()
-    messages.success(request, 'Bloque eliminado.')
+    gestor    = GestorAgenda(bloque.medico)
+
+    try:
+        gestor.eliminar_bloque_horario(bloque)
+        messages.success(request, 'Bloque eliminado correctamente.')
+    except ValidationError as e:
+        messages.error(request, str(e))
+
     return redirect('agenda_medico', medico_id=medico_id)
 
 @login_required
 def editar_bloque(request, bloque_id):
     bloque = get_object_or_404(BloqueHorario, pk=bloque_id, medico__user=request.user)
+    gestor = GestorAgenda(bloque.medico)
 
     if request.method == 'POST':
         form = BloqueHorarioForm(request.POST, instance=bloque)
         if form.is_valid():
-            ok, error = editar_bloque_con_turnos(bloque, form)
-            if ok:
-                messages.success(request, 'Bloque actualizado y turnos regenerados.')
+            try:
+                gestor.editar_bloque_horario(
+                    bloque         = bloque,
+                    dia_semana     = form.cleaned_data['dia_semana'],
+                    hora_inicio    = form.cleaned_data['hora_inicio'],
+                    hora_fin       = form.cleaned_data['hora_fin'],
+                    duracion_turno = form.cleaned_data['duracion_turno'],
+                )
+                messages.success(request, 'Bloque actualizado correctamente.')
                 return redirect('agenda_medico', medico_id=bloque.medico.id)
-            form.add_error(None, error)
+            except ValidationError as e:
+                form.add_error(None, e)
     else:
-        form = BloqueHorarioForm(instance=bloque)  # precarga los datos actuales
+        form = BloqueHorarioForm(instance=bloque)
 
     return render(request, 'editar_bloque.html', {
         'form':   form,

@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}Cancelar turno — MEDORA{% endblock %}
+
+{% block extra_css %}
+<style>
+  .container { max-width: 500px; margin: 3rem auto; padding: 0 1rem; }
+  .btn-volver { font-size: 13px; color: #1a73c8; text-decoration: none; display: inline-block; margin-bottom: 1.5rem; }
+  .btn-volver:hover { text-decoration: underline; }
+
+  .card { background: white; border: 0.5px solid #ddd; border-radius: 12px; padding: 1.75rem; }
+  .icono { font-size: 2.5rem; margin-bottom: 1rem; }
+  .card h1 { font-size: 18px; font-weight: 500; margin-bottom: 0.4rem; }
+  .card p  { font-size: 13px; color: #666; margin-bottom: 1.5rem; }
+
+  .resumen { background: #f9f9f9; border: 0.5px solid #eee; border-radius: 10px;
+             padding: 1.25rem; margin-bottom: 1.5rem; }
+  .resumen-fila { display: flex; justify-content: space-between; align-items: center;
+                  padding: 8px 0; border-bottom: 0.5px solid #eee; font-size: 13px; }
+  .resumen-fila:last-child { border-bottom: none; }
+  .resumen-fila .label { color: #666; }
+  .resumen-fila .valor { font-weight: 500; }
+
+  .aviso { background: #fff8e1; border: 0.5px solid #ffe082; border-radius: 8px;
+           padding: 10px 14px; font-size: 12px; color: #7a6000; margin-bottom: 1.5rem; }
+
+  .acciones { display: flex; gap: 10px; }
+  .btn-confirmar { flex: 1; padding: 10px; background: #a32d2d; color: white;
+                   border: none; border-radius: 8px; font-size: 14px;
+                   font-weight: 500; cursor: pointer; }
+  .btn-confirmar:hover { background: #8a2020; }
+  .btn-volver-link { flex: 1; padding: 10px; background: transparent; color: #555;
+                     border: 0.5px solid #ccc; border-radius: 8px; font-size: 14px;
+                     text-decoration: none; text-align: center; }
+  .btn-volver-link:hover { background: #f5f5f5; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <a href="{% url 'mis_turnos' %}" class="btn-volver">← Volver a mis turnos</a>
+
+  <div class="card">
+    <div class="icono">⚠️</div>
+    <h1>Cancelar turno</h1>
+    <p>Estás por cancelar el siguiente turno. Esta acción no se puede deshacer.</p>
+
+    <div class="resumen">
+      <div class="resumen-fila">
+        <span class="label">Profesional</span>
+        <span class="valor">Dr. {{ reserva.turno.bloque.medico.nombre }}</span>
+      </div>
+      <div class="resumen-fila">
+        <span class="label">Especialidad</span>
+        <span class="valor">{{ reserva.turno.bloque.medico.especialidad }}</span>
+      </div>
+      <div class="resumen-fila">
+        <span class="label">Fecha</span>
+        <span class="valor">{{ reserva.turno.fecha|date:"d/m/Y" }}</span>
+      </div>
+      <div class="resumen-fila">
+        <span class="label">Hora</span>
+        <span class="valor">{{ reserva.turno.hora_inicio|time:"H:i" }}</span>
+      </div>
+      <div class="resumen-fila">
+        <span class="label">Código</span>
+        <span class="valor">{{ reserva.codigo_reserva }}</span>
+      </div>
+    </div>
+
+    <div class="aviso">
+      ⏰ Solo podés cancelar hasta 24hs antes del turno. Una vez cancelado, el turno vuelve a estar disponible para otros pacientes.
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="acciones">
+        <a href="{% url 'mis_turnos' %}" class="btn-volver-link">Volver atrás</a>
+        <button type="submit" class="btn-confirmar">Sí, cancelar turno</button>
+      </div>
+    </form>
+
+  </div>
+</div>
+{% endblock %}

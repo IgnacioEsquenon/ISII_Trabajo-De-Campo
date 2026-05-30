@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block title %}Buscar turnos — MEDORA{% endblock %}
+
+{% block extra_css %}
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #1a1a1a; }
+  .container { max-width: 600px; margin: 3rem auto; padding: 0 1rem; }
+  .card { background: white; border: 0.5px solid #ddd; border-radius: 12px; padding: 2rem; }
+  .card h1 { font-size: 18px; font-weight: 500; margin-bottom: 0.4rem; }
+  .card p  { font-size: 13px; color: #666; margin-bottom: 1.5rem; }
+  label { display: block; font-size: 12px; color: #666; margin-bottom: 3px; margin-top: 14px; }
+  select, input[type="text"] { width: 100%; padding: 8px 10px; border: 0.5px solid #ccc;
+                                border-radius: 8px; font-size: 13px; }
+  select:focus, input:focus { outline: none; border-color: #1a73c8; }
+  .requerido { color: #a32d2d; }
+  .btn-buscar { width: 100%; margin-top: 1.5rem; padding: 10px; background: #1a73c8;
+                color: white; border: none; border-radius: 8px; font-size: 14px;
+                font-weight: 500; cursor: pointer; }
+  .btn-buscar:hover { background: #1558a0; }
+  .alert-error { background: #fcebeb; color: #a32d2d; border-radius: 8px;
+                 padding: 10px 14px; font-size: 13px; margin-bottom: 1rem; }
+  .hint { font-size: 11px; color: #aaa; margin-top: 3px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="card">
+    <h1>Buscar turnos</h1>
+    <p>Completá los campos para encontrar un profesional disponible.</p>
+
+    {% for message in messages %}
+      <div class="alert-error">{{ message }}</div>
+    {% endfor %}
+
+    <form method="post">
+      {% csrf_token %}
+
+      <label>Especialidad <span class="requerido">*</span></label>
+      <select name="especialidad" required>
+      <option value="" disabled selected>Seleccioná una especialidad</option>
+      {% for e in especialidades %}
+      <option value="{{ e.nombre }}">{{ e.nombre }}</option>  {# ← valor es nombre, no id #}
+      {% endfor %}
+      </select>
+
+    <label>Ciudad</label>
+    <input type="text" name="ciudad" placeholder="Ej: Corrientes">
+
+    <label>Nombre del profesional</label>
+    <input type="text" name="nombre" placeholder="Ej: García" id="input-nombre" autocomplete="off">
+
+      <label>Obra social <span class="requerido">*</span></label>
+      <select name="obra_social" required>
+        <option value="" disabled selected>Seleccioná una obra social</option>
+        {% for o in obras_sociales %}
+          <option value="{{ o.id }}">{{ o.nombre }}</option>
+        {% endfor %}
+      </select>
+
+      <label>Nombre del profesional</label>
+      <input type="text" name="nombre" placeholder="Ej: García" id="input-nombre" autocomplete="off">
+      <p class="hint">Opcional — se autocompleta mientras escribís</p>
+
+      <button type="submit" class="btn-buscar">Buscar</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Autocompletado del nombre
+  const inputNombre = document.getElementById('input-nombre');
+  let timeout = null;
+
+  inputNombre.addEventListener('input', function() {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      const especialidad = document.querySelector('select[name="especialidad"]').value;
+      const obraSocial   = document.querySelector('select[name="obra_social"]').value;
+      const nombre       = this.value.trim();
+
+      if (nombre.length < 2 || !especialidad || !obraSocial) return;
+
+      fetch(`/paciente/autocomplete/medico/?especialidad=${especialidad}&nombre=${nombre}`)
+        .then(r => r.json())
+        .then(data => {
+          // Eliminamos sugerencias anteriores
+          const viejo = document.getElementById('sugerencias');
+          if (viejo) viejo.remove();
+
+          if (data.length === 0) return;
+
+          const lista = document.createElement('ul');
+          lista.id = 'sugerencias';
+          lista.style.cssText = `
+            position: absolute; background: white; border: 0.5px solid #ddd;
+            border-radius: 8px; list-style: none; padding: 4px 0;
+            font-size: 13px; width: ${inputNombre.offsetWidth}px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 10;
+          `;
+
+          data.forEach(medico => {
+            const li = document.createElement('li');
+            li.textContent = medico.nombre;
+            li.style.cssText = 'padding: 8px 12px; cursor: pointer;';
+            li.addEventListener('mouseenter', () => li.style.background = '#f5f5f5');
+            li.addEventListener('mouseleave', () => li.style.background = 'white');
+            li.addEventListener('click', () => {
+              inputNombre.value = medico.nombre;
+              lista.remove();
+            });
+            lista.appendChild(li);
+          });
+
+          inputNombre.parentNode.style.position = 'relative';
+          inputNombre.insertAdjacentElement('afterend', lista);
+        });
+    }, 300);
+  });
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#sugerencias') && e.target !== inputNombre) {
+      const lista = document.getElementById('sugerencias');
+      if (lista) lista.remove();
+    }
+  });
+</script>
+{% endblock %}

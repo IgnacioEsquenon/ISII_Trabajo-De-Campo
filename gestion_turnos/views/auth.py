@@ -1,12 +1,13 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login
+from django.core.exceptions import ValidationError
 from gestion_turnos.forms import RegistroMedicoForm, RegistroPacienteForm
-from gestion_turnos.servicios.usuarios import registrar_medico, registrar_paciente, resolver_destino_usuario
+from gestion_turnos.servicios.usuarios import resolver_destino_usuario
+from gestion_turnos.servicios.registro import Registro
 
 def home_principal(request):
     if not request.user.is_authenticated:
         return render(request, 'home_principal.html')
-    
     ruta, kwargs = resolver_destino_usuario(request.user)
     return redirect(ruta, **kwargs)
 
@@ -22,9 +23,24 @@ def registro_medico(request):
     if request.method == 'POST':
         form = RegistroMedicoForm(request.POST)
         if form.is_valid():
-            user = registrar_medico(form)
-            login(request, user)
-            return redirect('home_principal')
+            try:
+                # Validamos unicidad antes de crear
+                Registro.validar_unicidad(
+                    email     = form.cleaned_data['email'] if 'email' in form.cleaned_data else None,
+                    matricula = form.cleaned_data['matricula']
+                )
+                usuario = Registro.registrar_usuario(form)
+                Registro.registrar_medico(
+                    usuario      = usuario,
+                    matricula    = form.cleaned_data['matricula'],
+                    especialidad = form.cleaned_data['especialidad'],
+                    clinica      = form.cleaned_data.get('clinica'),
+                    obras_sociales = form.cleaned_data.get('obras_sociales', []),
+                )
+                login(request, usuario)
+                return redirect('home_principal')
+            except ValidationError as e:
+                form.add_error(None, e)
     else:
         form = RegistroMedicoForm()
 
@@ -37,9 +53,19 @@ def registro_paciente(request):
     if request.method == 'POST':
         form = RegistroPacienteForm(request.POST)
         if form.is_valid():
-            user = registrar_paciente(form)
-            login(request, user)
-            return redirect('home_principal')
+            try:
+                Registro.validar_unicidad(dni=form.cleaned_data['dni'])
+                usuario = Registro.registrar_usuario(form)
+                Registro.registrar_paciente(
+                    usuario     = usuario,
+                    dni         = form.cleaned_data['dni'],
+                    telefono    = form.cleaned_data.get('telefono', ''),
+                    obra_social = form.cleaned_data.get('obra_social'),
+                )
+                login(request, usuario)
+                return redirect('home_principal')
+            except ValidationError as e:
+                form.add_error(None, e)
     else:
         form = RegistroPacienteForm()
 

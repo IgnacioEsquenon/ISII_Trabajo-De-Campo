@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}Turno confirmado — MEDORA{% endblock %}
+
+{% block extra_css %}
+<style>
+  .container { max-width: 500px; margin: 3rem auto; padding: 0 1rem; }
+
+  .card { background: white; border: 0.5px solid #ddd; border-radius: 12px; padding: 2rem; text-align: center; }
+
+  .icono { font-size: 3rem; margin-bottom: 1rem; }
+  .card h1 { font-size: 18px; font-weight: 500; margin-bottom: 0.4rem; }
+  .card p  { font-size: 13px; color: #666; margin-bottom: 1.5rem; }
+
+  .codigo { display: inline-block; background: #eef5fd; color: #0c447c; border: 0.5px solid #cce0f5;
+            border-radius: 10px; padding: 10px 24px; font-size: 22px; font-weight: 700;
+            letter-spacing: 0.1em; margin-bottom: 1.5rem; }
+
+  .resumen { background: #f9f9f9; border: 0.5px solid #eee; border-radius: 10px;
+             padding: 1.25rem; margin-bottom: 1.5rem; text-align: left; }
+  .resumen-fila { display: flex; justify-content: space-between; align-items: center;
+                  padding: 8px 0; border-bottom: 0.5px solid #eee; font-size: 13px; }
+  .resumen-fila:last-child { border-bottom: none; }
+  .resumen-fila .label { color: #666; }
+  .resumen-fila .valor { font-weight: 500; text-align: right; }
+
+  .acciones { display: flex; flex-direction: column; gap: 10px; }
+  .btn-primary { padding: 10px; background: #1a73c8; color: white; border: none;
+                 border-radius: 8px; font-size: 14px; font-weight: 500;
+                 cursor: pointer; text-decoration: none; text-align: center; }
+  .btn-primary:hover { background: #1558a0; }
+  .btn-secondary { padding: 10px; background: transparent; color: #555;
+                   border: 0.5px solid #ccc; border-radius: 8px; font-size: 14px;
+                   text-decoration: none; text-align: center; }
+  .btn-secondary:hover { background: #f5f5f5; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="card">
+
+    <div class="icono">✅</div>
+    <h1>¡Turno confirmado!</h1>
+    <p>Tu reserva fue registrada exitosamente. Guardá tu código de reserva.</p>
+
+    <div class="codigo">{{ reserva.codigo_reserva }}</div>
+
+    <div class="resumen">
+      <div class="resumen-fila">
+        <span class="label">Profesional</span>
+        <span class="valor">Dr. {{ reserva.turno.bloque.medico.nombre }}</span>
+      </div>
+      <div class="resumen-fila">
+        <span class="label">Especialidad</span>
+        <span class="valor">{{ reserva.turno.bloque.medico.especialidad }}</span>
+      </div>
+      <div class="resumen-fila">
+        <span class="label">Fecha</span>
+        <span class="valor">{{ reserva.turno.fecha|date:"l, d \\d\\e F \\d\\e Y" }}</span>
+      </div>
+      <div class="resumen-fila">
+        <span class="label">Hora</span>
+        <span class="valor">{{ reserva.turno.hora_inicio|time:"H:i" }}</span>
+      </div>
+      <div class="resumen-fila">
+        <span class="label">Duración</span>
+        <span class="valor">{{ reserva.turno.bloque.duracion_turno }} minutos</span>
+      </div>
+      <div class="resumen-fila">
+        <span class="label">Paciente</span>
+        <span class="valor">{{ reserva.paciente.nombre }} {{ reserva.paciente.apellido }}</span>
+      </div>
+    </div>
+
+    <div class="acciones">
+      <a href="{% url 'mis_turnos' %}" class="btn-primary">Ver mis turnos</a>
+      <a href="{% url 'buscar_turnos' %}" class="btn-secondary">Buscar otro turno</a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

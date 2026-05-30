@@ -55,7 +55,12 @@
     <div class="nav-links">
     {% if user.is_authenticated %}
         <span style="color: #666; font-weight: 500; margin-right: 15px;">Hola, {{ user.first_name }}</span>
-        <a href="/admin/logout/" class="btn-login" style="color: #a32d2d;">Cerrar sesión</a>
+        <form action="{% url 'logout' %}" method="post" style="margin:0;">
+          {% csrf_token %}
+          <button type="submit" class="btn-login" style="color:#a32d2d; border:none; background:transparent; cursor:pointer; font-size:15px; font-weight:500;">
+          Cerrar sesión
+          </button>
+        </form>
     {% else %}
         <a href="{% url 'login' %}" class="btn-login">Iniciar sesión</a>
         <a href="{% url 'seleccionar_registro' %}" class="btn-register">Crear cuenta</a>
@@ -67,7 +72,7 @@
     <h1>Encontrá a tu especialista y pedí turno</h1>
     <p>Muchos profesionales de la salud confiables, listos para atenderte cuando lo necesites.</p>
     
-    <form class="search-box" action="#" method="GET">
+    <form class="search-box" action="{% url 'buscar_turnos' %}" method="GET">
       <input type="text" class="search-input" placeholder="Ej. Cardiólogo, Pediatra o nombre del médico..." required>
       <input type="text" class="search-input" placeholder="¿En qué ciudad o zona?">
       <button type="submit" class="btn-search">Buscar</button>

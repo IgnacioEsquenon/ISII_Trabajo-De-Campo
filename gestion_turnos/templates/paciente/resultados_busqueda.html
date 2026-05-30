@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}Resultados — MEDORA{% endblock %}
+
+{% block extra_css %}
+<style>
+  .container { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+  .header { margin-bottom: 1.5rem; }
+  .header h1 { font-size: 18px; font-weight: 500; }
+  .header p  { font-size: 13px; color: #666; margin-top: 3px; }
+  .btn-volver { font-size: 13px; color: #1a73c8; text-decoration: none; display: inline-block; margin-bottom: 1.5rem; }
+  .btn-volver:hover { text-decoration: underline; }
+
+  .medico-card { background: white; border: 0.5px solid #ddd; border-radius: 12px;
+                 padding: 1.25rem; margin-bottom: 1rem; }
+  .medico-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; }
+  .medico-nombre { font-size: 15px; font-weight: 500; }
+  .medico-especialidad { font-size: 12px; color: #666; margin-top: 2px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 0.75rem; }
+  .badge { font-size: 11px; padding: 3px 8px; border-radius: 20px;
+           background: #eef5fd; color: #0c447c; border: 0.5px solid #cce0f5; }
+  .btn-ver { font-size: 12px; padding: 6px 14px; background: #1a73c8; color: white;
+             border: none; border-radius: 8px; cursor: pointer; text-decoration: none;
+             white-space: nowrap; }
+  .btn-ver:hover { background: #1558a0; }
+
+  .empty { text-align: center; padding: 3rem 1rem; color: #aaa; font-size: 14px; }
+  .empty span { display: block; font-size: 2rem; margin-bottom: 0.5rem; }
+
+  .paginacion { display: flex; justify-content: center; gap: 8px; margin-top: 1.5rem; }
+  .paginacion a, .paginacion span { font-size: 13px; padding: 6px 12px; border-radius: 8px;
+                                     border: 0.5px solid #ddd; text-decoration: none; color: #1a1a1a; }
+  .paginacion a:hover { background: #f5f5f5; }
+  .paginacion .actual { background: #1a73c8; color: white; border-color: #1a73c8; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <a href="{% url 'buscar_turnos' %}" class="btn-volver">← Volver a la búsqueda</a>
+
+  <div class="header">
+    <h1>Profesionales disponibles</h1>
+    <p>
+      {% if medicos.paginator.count == 0 %}
+        No se encontraron resultados.
+      {% elif medicos.paginator.count == 1 %}
+        1 profesional encontrado.
+      {% else %}
+        {{ medicos.paginator.count }} profesionales encontrados.
+      {% endif %}
+    </p>
+  </div>
+
+  {% if medicos.object_list %}
+    {% for medico in medicos %}
+      <div class="medico-card">
+        <div class="medico-header">
+          <div>
+            <div class="medico-nombre">Dr. {{ medico.nombre }}</div>
+            <div class="medico-especialidad">{{ medico.especialidad }}</div>
+          </div>
+          <a href="{% url 'detalle_medico' medico.id %}" class="btn-ver">Ver turnos</a>
+        </div>
+
+        <div class="badges">
+          {% for os in medico.obras_sociales.all %}
+            <span class="badge">{{ os.nombre }}</span>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+
+    <div class="paginacion">
+      {% if medicos.has_previous %}
+        <a href="?especialidad={{ especialidad }}&nombre={{ nombre }}&ciudad={{ ciudad }}&page={{ medicos.previous_page_number }}">← Anterior</a>
+      {% endif %}
+
+      <span class="actual">{{ medicos.number }} / {{ medicos.paginator.num_pages }}</span>
+
+      {% if medicos.has_next %}
+        <a href="?especialidad={{ especialidad }}&nombre={{ nombre }}&ciudad={{ ciudad }}&page={{ medicos.next_page_number }}">Siguiente →</a>
+      {% endif %}
+    </div>
+
+  {% else %}
+    <div class="empty">
+      <span>🔍</span>
+      No encontramos profesionales con esos filtros. Probá con otros criterios.
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

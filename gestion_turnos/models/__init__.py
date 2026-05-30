@@ -4,3 +4,8 @@ from .turno import Turno
 from .bloque import BloqueHorario
 from .especialidad import Especialidad
 from .obra_social  import ObraSocial
+from .reserva import Reserva
+from .clinica import Clinica
+from .ciudad import Ciudad
+from .provincia import Provincia
+from .consultorio_particular import ConsultorioParticular

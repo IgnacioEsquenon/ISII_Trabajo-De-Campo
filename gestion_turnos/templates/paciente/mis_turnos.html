@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}Mis turnos — MEDORA{% endblock %}
+
+{% block extra_css %}
+<style>
+  .container { max-width: 700px; margin: 2rem auto; padding: 0 1rem; }
+  .header { margin-bottom: 1.5rem; }
+  .header h1 { font-size: 18px; font-weight: 500; }
+  .header p  { font-size: 13px; color: #666; margin-top: 3px; }
+
+  .empty { text-align: center; padding: 3rem 1rem; color: #aaa; font-size: 14px;
+           background: white; border-radius: 12px; border: 0.5px solid #ddd; }
+  .empty span { display: block; font-size: 2rem; margin-bottom: 0.5rem; }
+
+  .reserva-card { background: white; border: 0.5px solid #ddd; border-radius: 12px;
+                  padding: 1.25rem; margin-bottom: 1rem; }
+  .reserva-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; }
+  .reserva-medico { font-size: 15px; font-weight: 500; }
+  .reserva-especialidad { font-size: 12px; color: #666; margin-top: 2px; }
+
+  .badge-estado { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 500; }
+  .badge-activa    { background: #e1f5ee; color: #085041; }
+  .badge-cancelada { background: #f1efe8; color: #5f5e5a; }
+
+  .reserva-info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 0.75rem; }
+  .info-item { font-size: 12px; }
+  .info-item .label { color: #666; margin-bottom: 2px; }
+  .info-item .valor { font-weight: 500; font-size: 13px; }
+
+  .codigo { font-size: 12px; color: #666; }
+  .codigo span { font-weight: 500; color: #1a1a1a; letter-spacing: 0.05em; }
+
+  .reserva-footer { display: flex; justify-content: space-between; align-items: center;
+                    margin-top: 0.75rem; padding-top: 0.75rem; border-top: 0.5px solid #eee; }
+  .btn-cancelar { font-size: 12px; padding: 5px 12px; border-radius: 6px; cursor: pointer;
+                  border: 0.5px solid #f09595; background: transparent; color: #a32d2d;
+                  text-decoration: none; }
+  .btn-cancelar:hover { background: #fcebeb; }
+  .texto-cancelada { font-size: 12px; color: #aaa; }
+  .aviso-24hs { font-size: 11px; color: #aaa; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <div class="header">
+    <h1>Mis turnos</h1>
+    <p>Historial de reservas y turnos activos.</p>
+  </div>
+
+  {% if reservas %}
+    {% for reserva in reservas %}
+      <div class="reserva-card">
+
+        <div class="reserva-header">
+          <div>
+            <div class="reserva-medico">Dr. {{ reserva.turno.bloque.medico.nombre }}</div>
+            <div class="reserva-especialidad">{{ reserva.turno.bloque.medico.especialidad }}</div>
+          </div>
+          <span class="badge-estado badge-{{ reserva.estado }}">
+            {{ reserva.get_estado_display }}
+          </span>
+        </div>
+
+        <div class="reserva-info">
+          <div class="info-item">
+            <div class="label">Fecha</div>
+            <div class="valor">{{ reserva.turno.fecha|date:"d/m/Y" }}</div>
+          </div>
+          <div class="info-item">
+            <div class="label">Hora</div>
+            <div class="valor">{{ reserva.turno.hora_inicio|time:"H:i" }}</div>
+          </div>
+          <div class="info-item">
+            <div class="label">Duración</div>
+            <div class="valor">{{ reserva.turno.bloque.duracion_turno }} min</div>
+          </div>
+          <div class="info-item">
+            <div class="label">Reservado el</div>
+            <div class="valor">{{ reserva.created_at|date:"d/m/Y" }}</div>
+          </div>
+        </div>
+
+        <div class="reserva-footer">
+          <div class="codigo">Código: <span>{{ reserva.codigo_reserva }}</span></div>
+          {% if reserva.estado == 'activa' %}
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="aviso-24hs">Cancelable hasta 24hs antes</span>
+              <a href="{% url 'cancelar_turno' reserva.id %}" class="btn-cancelar">Cancelar</a>
+            </div>
+          {% else %}
+            <span class="texto-cancelada">Turno cancelado</span>
+          {% endif %}
+        </div>
+
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty">
+      <span>📋</span>
+      No tenés turnos reservados todavía.
+      <a href="{% url 'buscar_turnos' %}" style="display: block; margin-top: 10px; color: #1a73c8; font-size: 13px;">Buscar un turno</a>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

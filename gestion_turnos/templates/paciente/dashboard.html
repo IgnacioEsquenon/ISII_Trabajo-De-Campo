@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}Inicio — MEDORA{% endblock %}
+
+{% block extra_css %}
+<style>
+  .container { max-width: 700px; margin: 2rem auto; padding: 0 1rem; }
+  .bienvenida { margin-bottom: 1.5rem; }
+  .bienvenida h1 { font-size: 20px; font-weight: 500; }
+  .bienvenida p  { font-size: 13px; color: #666; margin-top: 3px; }
+
+  .acciones-rapidas { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+  .accion-card { background: white; border: 0.5px solid #ddd; border-radius: 12px;
+                 padding: 1.25rem; text-decoration: none; color: #1a1a1a;
+                 transition: box-shadow 0.2s; }
+  .accion-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  .accion-icono { font-size: 1.75rem; margin-bottom: 0.5rem; }
+  .accion-titulo { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+  .accion-desc { font-size: 12px; color: #666; }
+
+  .section-titulo { font-size: 14px; font-weight: 500; margin-bottom: 0.75rem; }
+  .reserva-card { background: white; border: 0.5px solid #ddd; border-radius: 10px;
+                  padding: 1rem 1.25rem; margin-bottom: 8px; display: flex;
+                  justify-content: space-between; align-items: center; }
+  .reserva-medico { font-size: 13px; font-weight: 500; }
+  .reserva-fecha  { font-size: 12px; color: #666; margin-top: 2px; }
+  .reserva-codigo { font-size: 11px; color: #aaa; letter-spacing: 0.05em; }
+  .badge-activa { font-size: 11px; padding: 3px 10px; border-radius: 20px;
+                  background: #e1f5ee; color: #085041; }
+
+  .empty-reservas { font-size: 13px; color: #aaa; padding: 1.25rem;
+                    background: white; border-radius: 10px; border: 0.5px solid #ddd;
+                    text-align: center; }
+  .link-ver-todos { font-size: 13px; color: #1a73c8; text-decoration: none;
+                    display: inline-block; margin-top: 0.75rem; }
+  .link-ver-todos:hover { text-decoration: underline; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <div class="bienvenida">
+    <h1>Hola, {{ paciente.nombre }} 👋</h1>
+    <p>¿Qué necesitás hacer hoy?</p>
+  </div>
+
+  <div class="acciones-rapidas">
+    <a href="{% url 'buscar_turnos' %}" class="accion-card">
+      <div class="accion-icono">🔍</div>
+      <div class="accion-titulo">Buscar turno</div>
+      <div class="accion-desc">Encontrá un profesional disponible</div>
+    </a>
+    <a href="{% url 'mis_turnos' %}" class="accion-card">
+      <div class="accion-icono">📋</div>
+      <div class="accion-titulo">Mis turnos</div>
+      <div class="accion-desc">Ver y gestionar tus reservas</div>
+    </a>
+    <a href="{% url 'perfil_paciente' %}" class="accion-card">
+      <div class="accion-icono">👤</div>
+      <div class="accion-titulo">Mi perfil</div>
+      <div class="accion-desc">Editá tus datos personales</div>
+    </a>
+  </div>
+
+  <div class="section-titulo">Últimas reservas</div>
+
+  {% if reservas %}
+    {% for reserva in reservas %}
+      <div class="reserva-card">
+        <div>
+          <div class="reserva-medico">Dr. {{ reserva.turno.bloque.medico.nombre }}</div>
+          <div class="reserva-fecha">
+            {{ reserva.turno.fecha|date:"d/m/Y" }} — {{ reserva.turno.hora_inicio|time:"H:i" }}
+          </div>
+          <div class="reserva-codigo">{{ reserva.codigo_reserva }}</div>
+        </div>
+        <span class="badge-activa">{{ reserva.get_estado_display }}</span>
+      </div>
+    {% endfor %}
+    <a href="{% url 'mis_turnos' %}" class="link-ver-todos">Ver todos mis turnos →</a>
+  {% else %}
+    <div class="empty-reservas">
+      No tenés turnos reservados todavía.
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

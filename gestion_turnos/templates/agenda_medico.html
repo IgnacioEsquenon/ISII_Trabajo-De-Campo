@@ -131,10 +131,13 @@
        data-duracion="{{ bloque.duracion_turno }}">
       Editar
     </a>
-    <a href="{% url 'eliminar_bloque' bloque.id %}" class="btn-sm btn-del"
-       onclick="return confirm('¿Eliminar este bloque?')">
-      Eliminar
-    </a>
+    <form method="post" action="{% url 'eliminar_bloque' bloque.id %}" style="display:inline;">
+  {% csrf_token %}
+  <button type="submit" class="btn-sm btn-del"
+          onclick="return confirm('¿Eliminar este bloque?')">
+    Eliminar
+  </button>
+</form>
   </div>
 </div>
           {% endfor %}
@@ -156,9 +159,9 @@
           
           <div class="turnos-grid">
             {% for turno in lista_turnos %}
-              <div class="turno-box {% if turno.estado == 'disponible' %}turno-disponible{% else %}turno-reservado{% endif %}">
-                <strong>{{ turno.hora|time:"H:i" }}</strong>
-                <span>{{ turno.get_estado_display }}</span>
+              <div class="turno-box {% if turno.esta_disponible %}turno-disponible{% else %}turno-reservado{% endif %}">
+              <strong>{{ turno.hora_inicio|time:"H:i" }}</strong>
+              <span>{% if turno.esta_reservado %}Reservado{% else %}Disponible{% endif %}</span>
               </div>
             {% endfor %}
           </div>
