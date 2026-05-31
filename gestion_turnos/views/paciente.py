@@ -128,16 +128,15 @@ def cancelar_turno(request, reserva_id):
 
 @login_required
 def perfil_paciente(request):
-    paciente = get_paciente(request)
+    paciente     = get_paciente(request)
+    obras_sociales = ObraSocial.objects.all()  # ← lo sacás arriba, fuera del if
 
     if request.method == 'POST':
         obra_social_id = request.POST.get('obra_social')
         obra_social    = None
         if obra_social_id:
-            from gestion_turnos.models import ObraSocial
             obra_social = ObraSocial.objects.filter(pk=obra_social_id).first()
 
-        # Usamos el método del modelo
         paciente.actualizar_datos(
             telefono    = request.POST.get('telefono', paciente.telefono),
             obra_social = obra_social
@@ -146,8 +145,8 @@ def perfil_paciente(request):
         return redirect('perfil_paciente')
 
     return render(request, 'paciente/perfil_paciente.html', {
-        'paciente':      paciente,
-        'obras_sociales': ObraSocial.objects.all(),
+        'paciente':       paciente,
+        'obras_sociales': obras_sociales,
     })
 
 @login_required
