@@ -60,6 +60,8 @@
           <div>
             <div class="medico-nombre">Dr. {{ medico.nombre }}</div>
             <div class="medico-especialidad">{{ medico.especialidad }}</div>
+             <div style="font-size: 12px; color: #888; margin-top: 4px;">
+        📍 {{ medico.get_lugar_atencion }} </div>
           </div>
           <a href="{% url 'detalle_medico' medico.id %}" class="btn-ver">Ver turnos</a>
         </div>
@@ -74,13 +76,13 @@
 
     <div class="paginacion">
       {% if medicos.has_previous %}
-        <a href="?especialidad={{ especialidad }}&nombre={{ nombre }}&ciudad={{ ciudad }}&page={{ medicos.previous_page_number }}">← Anterior</a>
+      <a href="?especialidad={{ especialidad }}&ciudad={{ ciudad }}&obra_social={{ obra_social }}&page={{ medicos.previous_page_number }}">← Anterior</a>
       {% endif %}
 
       <span class="actual">{{ medicos.number }} / {{ medicos.paginator.num_pages }}</span>
 
       {% if medicos.has_next %}
-        <a href="?especialidad={{ especialidad }}&nombre={{ nombre }}&ciudad={{ ciudad }}&page={{ medicos.next_page_number }}">Siguiente →</a>
+      <a href="?especialidad={{ especialidad }}&ciudad={{ ciudad }}&obra_social={{ obra_social }}&page={{ medicos.next_page_number }}">Siguiente →</a>
       {% endif %}
     </div>
 

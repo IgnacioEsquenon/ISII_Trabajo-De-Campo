@@ -15,7 +15,7 @@ class Medico(models.Model):
     especialidad   = models.ForeignKey(Especialidad, on_delete=models.SET_NULL, null=True)
     matricula      = models.CharField(max_length=50, unique=True)
     obras_sociales = models.ManyToManyField(ObraSocial, blank=True)
-    estado         = models.CharField(max_length=20, choices=ESTADOS, default='pendiente')  # ← nuevo
+    estado         = models.CharField(max_length=20, choices=ESTADOS, default='aprobado')  
 
     # Un médico atiende en una clínica O de forma particular
     clinica        = models.ForeignKey(
@@ -51,10 +51,10 @@ class Medico(models.Model):
     def existe_por_matricula(matricula):
         return Medico.objects.filter(matricula=matricula).exists()
     
-def get_lugar_atencion(self):
-    """Devuelve la dirección donde atiende, sea clínica o consultorio."""
-    if self.clinica:
-        return self.clinica.get_direccion_completa()
-    if self.es_particular and hasattr(self, 'consultorio_particular'):
-        return self.consultorio_particular.get_direccion_completa()
-    return 'Sin dirección registrada'
+    def get_lugar_atencion(self):
+        """Devuelve la dirección donde atiende, sea clínica o consultorio."""
+        if self.clinica:
+            return self.clinica.get_direccion_completa()
+        if self.es_particular and hasattr(self, 'consultorio_particular'):
+            return self.consultorio_particular.get_direccion_completa()
+        return 'Sin dirección registrada'

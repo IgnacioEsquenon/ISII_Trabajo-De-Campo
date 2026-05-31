@@ -8,11 +8,11 @@ from gestion_turnos.forms import BloqueHorarioForm
 from gestion_turnos.servicios.gestor_agenda import GestorAgenda
 from gestion_turnos.repositorio.turnos import obtener_turnos_por_fecha
 
+# views/medico.py
 @login_required
 def agenda_medico(request, medico_id):
-    # Ownership check — el médico solo ve su propia agenda
-    medico  = get_object_or_404(Medico, pk=medico_id, user=request.user)
-    gestor  = GestorAgenda(medico)
+    medico = get_object_or_404(Medico, pk=medico_id, user=request.user)
+    gestor = GestorAgenda(medico)
 
     if request.method == 'POST':
         form = BloqueHorarioForm(request.POST)
@@ -31,11 +31,23 @@ def agenda_medico(request, medico_id):
     else:
         form = BloqueHorarioForm()
 
+    # Turnos reservados futuros con datos del paciente
+    from gestion_turnos.models import Turno
+    from datetime import date
+    turnos_reservados = Turno.objects.filter(
+        bloque__medico = medico,
+        esta_reservado = True,
+        fecha__gte     = date.today()
+    ).select_related(
+        'reserva__paciente'
+    ).order_by('fecha', 'hora_inicio')
+
     return render(request, 'agenda_medico.html', {
-        'medico':           medico,
-        'form':             form,
-        'bloques_por_dia':  gestor.obtener_estructura_bloques(),
-        'turnos_por_fecha': obtener_turnos_por_fecha(medico),
+        'medico':            medico,
+        'form':              form,
+        'bloques_por_dia':   gestor.obtener_estructura_bloques(),
+        'turnos_por_fecha':  obtener_turnos_por_fecha(medico),
+        'turnos_reservados': turnos_reservados,   # ← nuevo
     })
 
 @login_required

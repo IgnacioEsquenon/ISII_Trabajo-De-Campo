@@ -14,6 +14,12 @@ class ConsultorioParticular(models.Model):
     numero     = models.CharField(max_length=20)
     piso_depto = models.CharField(max_length=30, blank=True)
     telefono   = models.CharField(max_length=25, blank=True)
+    ciudad     = models.ForeignKey(        # ← nuevo
+        'Ciudad',
+        on_delete    = models.SET_NULL,
+        null=True, blank=True,
+        related_name = 'consultorios'
+    )
 
     def __str__(self):
         return f"Consultorio de {self.medico.nombre}"
@@ -23,4 +29,6 @@ class ConsultorioParticular(models.Model):
         base = f"{self.calle} {self.numero}"
         if self.piso_depto:
             base += f", {self.piso_depto}"
+        if self.ciudad:
+            base += f" — {self.ciudad}"  # muestra "ciudad, provincia"
         return base

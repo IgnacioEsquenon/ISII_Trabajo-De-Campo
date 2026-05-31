@@ -7,21 +7,31 @@ class GestorBusqueda:
     y la consulta de turnos disponibles.
     """
 
-    def buscar_medicos(self, especialidad, nombre='', ciudad=None):
+    def buscar_medicos(self, especialidad='', nombre='', ciudad=None, obra_social=None):
         """
-        Busca médicos aprobados filtrando por especialidad,
-        nombre opcional y ciudad opcional.
+        Busca médicos aprobados filtrando por cualquier combinación
+        de especialidad, ciudad y obra social.
+        Al menos uno debe tener valor.
         """
-        medicos = Medico.objects.filter(
-            especialidad__nombre__icontains = especialidad,
-            estado                          = 'aprobado'
-        )
+        medicos = Medico.objects.filter(estado='aprobado')
+
+        if especialidad:
+            medicos = medicos.filter(
+                especialidad__nombre__icontains=especialidad
+            )
+
+        if ciudad:
+            medicos = medicos.filter(
+                clinica__ciudad__nombre__icontains=ciudad
+            )
+
+        if obra_social:
+            medicos = medicos.filter(
+                obras_sociales__nombre__icontains=obra_social
+            )
 
         if nombre:
             medicos = medicos.filter(nombre__icontains=nombre)
-
-        if ciudad:
-            medicos = medicos.filter(clinica__ciudad__nombre__icontains=ciudad)
 
         return medicos.distinct()
 

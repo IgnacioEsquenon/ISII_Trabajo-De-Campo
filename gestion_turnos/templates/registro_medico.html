@@ -4,37 +4,48 @@
 
 {% block extra_css %}
 <style>
-  /* Contenedor para centrar la tarjeta sin romper el navbar */
   .registro-wrapper { 
-    display: flex; 
-    justify-content: center; 
-    align-items: center; 
-    min-height: calc(100vh - 80px); 
-    padding: 2rem 1rem; 
+    display: flex; justify-content: center; align-items: flex-start; 
+    min-height: calc(100vh - 80px); padding: 2rem 1rem; 
   }
-
-  .card { background: white; border: 0.5px solid #ddd; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); width: 100%; max-width: 500px; }
+  .card { background: white; border: 0.5px solid #ddd; border-radius: 12px; 
+          padding: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
+          width: 100%; max-width: 500px; }
   h2 { font-size: 20px; font-weight: 500; margin-bottom: 5px; text-align: center; }
-  p.subtitle { font-size: 13px; color: #666; margin-bottom: 20px; text-align: center; }
-  
-  /* Estilos para que los campos automáticos de Django se vean bien */
-  label { display: block; font-size: 13px; font-weight: 500; margin-top: 15px; margin-bottom: 5px; color: #333; }
-  
-  /* Sumamos type="email" y type="number" (ideal para la matrícula médica) */
-  input[type="text"], input[type="password"], input[type="email"], input[type="number"] { 
-    width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s;
+  .subtitle { font-size: 13px; color: #666; margin-bottom: 20px; text-align: center; }
+  label { display: block; font-size: 13px; font-weight: 500; margin-top: 15px; 
+          margin-bottom: 5px; color: #333; }
+  input[type="text"], input[type="password"] { 
+    width: 100%; padding: 10px; border: 1px solid #ccc; 
+    border-radius: 8px; font-size: 14px; outline: none; 
   }
-  input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focus, input[type="number"]:focus { border-color: #1a73c8; }
-  
-  .helptext { display: block; font-size: 11px; color: #888; margin-top: 4px; line-height: 1.4; }
+  input:focus { border-color: #1a73c8; }
+  select { width: 100%; padding: 10px; border: 1px solid #ccc; 
+           border-radius: 8px; font-size: 14px; outline: none; }
+  select:focus { border-color: #1a73c8; }
+  .helptext { display: block; font-size: 11px; color: #888; margin-top: 4px; }
   ul.errorlist { color: #a32d2d; font-size: 12px; margin-top: 4px; padding-left: 1rem; }
-  
-  .btn-save { width: 100%; margin-top: 25px; padding: 12px; background: #1a73c8; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+  .seccion { border: 0.5px solid #eee; border-radius: 10px; padding: 1rem; margin-top: 1rem; }
+  .seccion-titulo { font-size: 12px; font-weight: 500; color: #999; 
+                    text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+  .toggle-particular { display: flex; align-items: center; gap: 8px; 
+                        margin-top: 15px; font-size: 13px; cursor: pointer; }
+  .toggle-particular input[type="checkbox"] { width: auto; cursor: pointer; }
+  .campos-particular { display: none; margin-top: 10px; }
+  .campos-particular.visible { display: block; }
+  .obras-sociales-lista { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .obras-sociales-lista label { font-weight: 400; margin-top: 0; 
+                                 display: flex; align-items: center; gap: 6px; }
+  .obras-sociales-lista input[type="checkbox"] { width: auto; }
+  .btn-save { width: 100%; margin-top: 25px; padding: 12px; background: #1a73c8; 
+              color: white; border: none; border-radius: 8px; font-size: 15px; 
+              font-weight: 500; cursor: pointer; }
   .btn-save:hover { background: #1558a0; }
-  
-  .enlace-login { text-align: center; display: block; margin-top: 20px; font-size: 13px; color: #666; text-decoration: none; }
-  .enlace-login strong { color: #1a73c8; transition: color 0.2s; }
-  .enlace-login:hover strong { color: #1558a0; text-decoration: underline; }
+  .enlace-login { text-align: center; display: block; margin-top: 20px; 
+                  font-size: 13px; color: #666; text-decoration: none; }
+  .enlace-login strong { color: #1a73c8; }
+  .alert-error { background: #fcebeb; color: #a32d2d; border-radius: 8px;
+                 padding: 10px 14px; font-size: 13px; margin-bottom: 1rem; }
 </style>
 {% endblock %}
 
@@ -43,16 +54,134 @@
   <div class="card">
     <h2>Registro para Profesionales</h2>
     <p class="subtitle">Creá tu cuenta para gestionar tu agenda de turnos.</p>
-    
+
+    {% if form.non_field_errors %}
+      {% for error in form.non_field_errors %}
+        <div class="alert-error">{{ error }}</div>
+      {% endfor %}
+    {% endif %}
+
     <form method="post">
       {% csrf_token %}
-      
-      {{ form.as_p }}
-      
+
+      {# Datos de acceso #}
+      <div class="seccion">
+        <div class="seccion-titulo">Datos de acceso</div>
+        <label>Usuario</label>
+        {{ form.username }}
+        {{ form.username.errors }}
+
+        <label>Contraseña</label>
+        {{ form.password1 }}
+        <span class="helptext">{{ form.password1.help_text }}</span>
+        {{ form.password1.errors }}
+
+        <label>Confirmar contraseña</label>
+        {{ form.password2 }}
+        {{ form.password2.errors }}
+      </div>
+
+      {# Datos personales #}
+      <div class="seccion">
+        <div class="seccion-titulo">Datos personales</div>
+        <label>Nombre</label>
+        {{ form.nombre }}
+        {{ form.nombre.errors }}
+
+        <label>Apellido</label>
+        {{ form.apellido }}
+        {{ form.apellido.errors }}
+      </div>
+
+      {# Datos profesionales #}
+      <div class="seccion">
+        <div class="seccion-titulo">Datos profesionales</div>
+        <label>Matrícula</label>
+        {{ form.matricula }}
+        {{ form.matricula.errors }}
+
+        <label>Especialidad</label>
+        {{ form.especialidad }}
+        {{ form.especialidad.errors }}
+
+        <label>Obras sociales que acepta</label>
+        <div class="obras-sociales-lista">
+          {{ form.obras_sociales }}
+        </div>
+        {{ form.obras_sociales.errors }}
+      </div>
+
+      {# Lugar de atención #}
+      <div class="seccion">
+        <div class="seccion-titulo">Lugar de atención</div>
+
+        <label>Clínica donde atiende</label>
+        {{ form.clinica }}
+        {{ form.clinica.errors }}
+
+        <label class="toggle-particular">
+          {{ form.es_particular }}
+          Atiende de forma particular
+        </label>
+        {{ form.es_particular.errors }}
+
+        <div class="campos-particular" id="campos-particular">
+          <label>Calle</label>
+          {{ form.calle }}
+          {{ form.calle.errors }}
+
+          <label>Número</label>
+          {{ form.numero }}
+          {{ form.numero.errors }}
+
+          <label>Piso / Departamento</label>
+          {{ form.piso_depto }}
+          {{ form.piso_depto.errors }}
+
+          <label>Ciudad</label>                        
+          {{ form.ciudad_consultorio }}
+          {{ form.ciudad_consultorio.errors }}
+
+          <label>Teléfono del consultorio</label>
+          {{ form.telefono_consultorio }}
+          {{ form.telefono_consultorio.errors }}
+        </div>
+      </div>
+
       <button type="submit" class="btn-save">Registrarme y Entrar</button>
     </form>
-    
-    <a href="{% url 'login' %}" class="enlace-login">¿Ya tenés cuenta? <strong>Iniciá sesión acá</strong></a>
+
+    <a href="{% url 'login' %}" class="enlace-login">
+      ¿Ya tenés cuenta? <strong>Iniciá sesión acá</strong>
+    </a>
   </div>
 </div>
+
+<script>
+  // Buscamos por name en vez de id por si Django cambia el id
+  const checkbox      = document.querySelector('input[name="es_particular"]');
+  const camposDiv     = document.getElementById('campos-particular');
+  const selectClinica = document.querySelector('select[name="clinica"]');
+
+  function toggleParticular() {
+    if (checkbox.checked) {
+      camposDiv.classList.add('visible');
+      if (selectClinica) {
+        selectClinica.value    = '';
+        selectClinica.disabled = true;
+      }
+    } else {
+      camposDiv.classList.remove('visible');
+      if (selectClinica) {
+        selectClinica.disabled = false;
+      }
+    }
+  }
+
+  if (checkbox) {
+    checkbox.addEventListener('change', toggleParticular);
+    // Si la página carga con el checkbox ya marcado (error de validación)
+    if (checkbox.checked) toggleParticular();
+  }
+</script>
 {% endblock %}

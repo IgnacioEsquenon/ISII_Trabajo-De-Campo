@@ -31,11 +31,16 @@ def registro_medico(request):
                 )
                 usuario = Registro.registrar_usuario(form)
                 Registro.registrar_medico(
-                    usuario      = usuario,
-                    matricula    = form.cleaned_data['matricula'],
-                    especialidad = form.cleaned_data['especialidad'],
-                    clinica      = form.cleaned_data.get('clinica'),
-                    obras_sociales = form.cleaned_data.get('obras_sociales', []),
+                usuario        = usuario,
+                matricula      = form.cleaned_data['matricula'],
+                especialidad   = form.cleaned_data['especialidad'],
+                clinica        = form.cleaned_data.get('clinica'),
+                obras_sociales = form.cleaned_data.get('obras_sociales', []),
+                calle          = form.cleaned_data.get('calle', ''),
+                numero         = form.cleaned_data.get('numero', ''),
+                piso_depto     = form.cleaned_data.get('piso_depto', ''),
+                telefono_consultorio = form.cleaned_data.get('telefono_consultorio', ''),
+                ciudad_consultorio   = form.cleaned_data.get('ciudad_consultorio'),
                 )
                 login(request, usuario)
                 return redirect('home_principal')

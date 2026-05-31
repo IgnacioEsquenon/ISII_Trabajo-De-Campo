@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
-from gestion_turnos.models import Medico, Paciente
+from gestion_turnos.models import Medico, Paciente, clinica, medico
+from gestion_turnos.models.consultorio_particular import ConsultorioParticular
 
 class Registro:
     """
@@ -49,11 +50,13 @@ class Registro:
         )
     
     @staticmethod
-    def registrar_medico(usuario, matricula, especialidad, estado='pendiente', clinica=None, obras_sociales=None):
+    def registrar_medico(usuario, matricula, especialidad, estado='aprobado', clinica=None, obras_sociales=None, **kwargs):
         """
         Crea el perfil Medico vinculado al usuario.
-        El médico queda en estado 'pendiente' hasta que el admin lo apruebe.
+        Si es particular también crea el ConsultorioParticular.
         """
+        from gestion_turnos.models import ConsultorioParticular
+    
         usuario.save()
         es_particular = clinica is None
 
@@ -69,5 +72,16 @@ class Registro:
 
         if obras_sociales:
             medico.obras_sociales.set(obras_sociales)
+
+    # Si atiende de forma particular creamos su consultorio
+        if es_particular and kwargs.get('calle'):
+            ConsultorioParticular.objects.create(
+            medico     = medico,
+            calle      = kwargs.get('calle', ''),
+            numero     = kwargs.get('numero', ''),
+            piso_depto = kwargs.get('piso_depto', ''),
+            telefono   = kwargs.get('telefono_consultorio', ''),
+            ciudad     = kwargs.get('ciudad_consultorio'),  
+        )
 
         return medico

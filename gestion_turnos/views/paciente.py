@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -22,33 +24,36 @@ def dashboard_paciente(request):
 
 @login_required
 def buscar_turnos(request):
+    from gestion_turnos.models import Ciudad
     if request.method == 'POST':
         especialidad = request.POST.get('especialidad', '').strip()
-        nombre       = request.POST.get('nombre', '').strip()
         ciudad       = request.POST.get('ciudad', '').strip()
+        obra_social  = request.POST.get('obra_social', '').strip()
 
-        if not especialidad:
-            messages.error(request, 'La especialidad es obligatoria.')
+        # Al menos un campo debe estar completo
+        if not especialidad and not ciudad and not obra_social:
+            messages.error(request, 'Completá al menos un campo para buscar.')
         else:
             return redirect(
                 f"/paciente/resultados/?especialidad={especialidad}"
-                f"&nombre={nombre}&ciudad={ciudad}"
+                f"&ciudad={ciudad}&obra_social={obra_social}"
             )
 
     return render(request, 'paciente/buscar_turnos.html', {
         'especialidades': Especialidad.objects.all(),
-        'obras_sociales': ObraSocial.objects.all(),
+        'ciudades':       Ciudad.objects.all(),
+        'obras_sociales': ObraSocial.objects.all(),  # ← nuevo
     })
 
 @login_required
 def resultados_busqueda(request):
     from django.core.paginator import Paginator
     especialidad = request.GET.get('especialidad', '')
-    nombre       = request.GET.get('nombre', '')
     ciudad       = request.GET.get('ciudad', '')
+    obra_social  = request.GET.get('obra_social', '')
 
     gestor  = GestorBusqueda()
-    medicos = gestor.buscar_medicos(especialidad, nombre, ciudad)
+    medicos = gestor.buscar_medicos(especialidad, ciudad=ciudad, obra_social=obra_social)
 
     paginator = Paginator(medicos, 5)
     pagina    = paginator.get_page(request.GET.get('page'))
@@ -56,8 +61,8 @@ def resultados_busqueda(request):
     return render(request, 'paciente/resultados_busqueda.html', {
         'medicos':      pagina,
         'especialidad': especialidad,
-        'nombre':       nombre,
         'ciudad':       ciudad,
+        'obra_social':  obra_social,
     })
 
 @login_required
@@ -99,8 +104,9 @@ def mis_turnos(request):
     paciente = get_paciente(request)
     gestor   = GestorPanelPaciente()
     return render(request, 'paciente/mis_turnos.html', {
-        'paciente': paciente,
-        'reservas': gestor.obtener_historial(paciente),
+    'paciente': paciente,
+    'reservas': gestor.obtener_historial(paciente),
+    'today':    date.today(),   
     })
 
 @login_required

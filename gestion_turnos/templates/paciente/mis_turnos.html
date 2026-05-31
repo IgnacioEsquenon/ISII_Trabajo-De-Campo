@@ -60,7 +60,11 @@
             <div class="reserva-especialidad">{{ reserva.turno.bloque.medico.especialidad }}</div>
           </div>
           <span class="badge-estado badge-{{ reserva.estado }}">
+          {% if reserva.estado == 'activa' and reserva.turno.fecha < today %}
+            Atendida
+          {% else %}
             {{ reserva.get_estado_display }}
+          {% endif %}
           </span>
         </div>
 
