@@ -202,3 +202,19 @@ class TestReservaModelo(TestCase):
             self.reserva.codigo_reserva,
             reserva2.codigo_reserva
         )
+    
+    def test_horas_hasta_el_turno_pasado_devuelve_cero_o_negativo(self):
+        """horas_hasta_el_turno debe manejar correctamente fechas pasadas sin romper la app."""
+        from django.utils import timezone
+        
+        # Simulamos que el turno fue hace 2 días
+        pasado = timezone.now() - timedelta(days=2)
+        self.turno.fecha = pasado.date()
+        self.turno.hora_inicio = pasado.time()
+        self.turno.save()
+
+        resultado = self.reserva.horas_hasta_el_turno()
+        
+        # Dependiendo de tu lógica en el modelo, debería devolver 0 o un número negativo.
+        # Aseguramos que sea menor o igual a cero (nunca positivo).
+        self.assertLessEqual(resultado, 0)

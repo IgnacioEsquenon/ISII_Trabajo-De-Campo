@@ -62,6 +62,19 @@ class TestGestorReservaReservarTurno(TestCase):
         with self.assertRaises(ValidationError):
             self.gestor.reservar_turno(self.paciente, self.turno)
 
+    def test_CP20_reservar_turno_en_el_pasado_lanza_error(self):
+        """CP-20: Intentar reservar un turno con fecha/hora en el pasado lanza ValidationError."""
+        from django.utils import timezone
+        
+        # Configuramos el turno para que parezca que fue ayer
+        ayer = timezone.now() - timedelta(days=1)
+        self.turno.fecha = ayer.date()
+        self.turno.hora_inicio = ayer.time()
+        self.turno.save()
+
+        with self.assertRaises(ValidationError):
+            self.gestor.reservar_turno(self.paciente, self.turno)
+
 class TestGestorReservaCancelar(TestCase):
 
     def setUp(self):

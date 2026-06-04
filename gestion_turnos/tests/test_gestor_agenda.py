@@ -266,3 +266,25 @@ class TestGestorAgendaObtener(TestCase):
             duracion_turno=30, activo=False
         )
         self.assertEqual(self.gestor.obtener_bloques().count(), 1)
+    
+    def test_CP18_hora_fin_igual_a_inicio(self):
+        """CP-18: Hora fin exactamente igual a hora inicio lanza ValidationError."""
+        with self.assertRaises(ValidationError):
+            self.gestor.crear_bloque_horario(
+                dia_semana=0, 
+                hora_inicio=time(9,0),
+                hora_fin=time(9,0), # Duración cero
+                duracion_turno=30
+            )
+
+    def test_CP19_cruce_de_medianoche(self):
+        """CP-19: Bloque que cruza la medianoche lanza ValidationError."""
+        # Un turno que empieza a las 23:00 y termina a las 02:00 del día siguiente.
+        # El sistema debería exigir que se parta en dos bloques distintos por día.
+        with self.assertRaises(ValidationError):
+            self.gestor.crear_bloque_horario(
+                dia_semana=0, 
+                hora_inicio=time(23,0),
+                hora_fin=time(2,0), 
+                duracion_turno=30
+            )

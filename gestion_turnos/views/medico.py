@@ -8,7 +8,6 @@ from gestion_turnos.forms import BloqueHorarioForm
 from gestion_turnos.servicios.gestor_agenda import GestorAgenda
 from gestion_turnos.repositorio.turnos import obtener_turnos_por_fecha
 
-# views/medico.py
 @login_required
 def agenda_medico(request, medico_id):
     medico = get_object_or_404(Medico, pk=medico_id, user=request.user)
