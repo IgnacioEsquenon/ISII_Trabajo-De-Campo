@@ -72,11 +72,15 @@
     <h1>Encontrá a tu especialista y pedí turno</h1>
     <p>Muchos profesionales de la salud confiables, listos para atenderte cuando lo necesites.</p>
     
-    <form class="search-box" action="{% url 'buscar_turnos' %}" method="GET">
-      <input type="text" class="search-input" placeholder="Ej. Cardiólogo, Pediatra o nombre del médico..." required>
-      <input type="text" class="search-input" placeholder="¿En qué ciudad o zona?">
-      <button type="submit" class="btn-search">Buscar</button>
-    </form>
+    <form class="search-box" action="{% url 'busqueda_publica' %}" method="GET">
+  <select name="especialidad" class="search-input" style="flex:1;">
+    <option value="">Seleccioná una especialidad...</option>
+    {% for e in especialidades %}
+      <option value="{{ e.nombre }}">{{ e.nombre }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn-search">Buscar</button>
+</form>
   </header>
 
   <section class="features">

@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}Dr. {{ medico.nombre }} — MEDORA{% endblock %}
+
+{% block extra_css %}
+<style>
+  .container { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+  .btn-volver { font-size: 13px; color: #1a73c8; text-decoration: none;
+                display: inline-block; margin-bottom: 1.5rem; }
+  .medico-card { background: white; border: 0.5px solid #ddd; border-radius: 12px;
+                 padding: 1.5rem; margin-bottom: 1.5rem; }
+  .medico-nombre { font-size: 18px; font-weight: 500; margin-bottom: 4px; }
+  .medico-especialidad { font-size: 13px; color: #666; margin-bottom: 6px; }
+  .medico-direccion { font-size: 12px; color: #888; margin-bottom: 1rem; }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; }
+  .badge { font-size: 11px; padding: 3px 8px; border-radius: 20px;
+           background: #eef5fd; color: #0c447c; border: 0.5px solid #cce0f5; }
+
+  .aviso-login { background: #fff8e1; border: 0.5px solid #ffe082; border-radius: 10px;
+                 padding: 14px; font-size: 13px; color: #7a6000; margin-bottom: 1.5rem;
+                 text-align: center; }
+
+  details { background: white; border: 0.5px solid #ddd; border-radius: 8px;
+            margin-bottom: 8px; overflow: hidden; }
+  summary { padding: 12px 15px; font-size: 14px; font-weight: 500; cursor: pointer;
+            background: #fafafa; outline: none; list-style: none;
+            display: flex; justify-content: space-between; align-items: center; }
+  summary:hover { background: #f1f1f1; }
+  summary::-webkit-details-marker { display: none; }
+  details[open] summary { border-bottom: 0.5px solid #ddd; }
+  .badge-count { font-size: 12px; padding: 4px 10px; border-radius: 20px;
+                 background: #f1efe8; color: #5f5e5a; }
+
+  .turnos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                 gap: 10px; padding: 15px; }
+
+  /* Si está logueado — turno clickeable */
+  .turno-btn { padding: 10px; text-align: center; border-radius: 8px;
+               border: 1px solid #cce0f5; background: #eef5fd; color: #0c447c;
+               text-decoration: none; display: block; }
+  .turno-btn:hover { background: #d6eaf8; }
+  .turno-btn strong { font-size: 16px; display: block; margin-bottom: 3px; }
+  .turno-btn span { font-size: 11px; }
+
+  /* Si NO está logueado — turno bloqueado visualmente */
+  .turno-bloqueado { padding: 10px; text-align: center; border-radius: 8px;
+                     border: 1px solid #ddd; background: #f9f9f9; color: #aaa;
+                     cursor: not-allowed; display: block; }
+  .turno-bloqueado strong { font-size: 16px; display: block; margin-bottom: 3px; }
+  .turno-bloqueado span { font-size: 11px; }
+
+  .empty { font-size: 13px; color: #aaa; padding: 2rem; text-align: center;
+           background: white; border-radius: 12px; border: 0.5px solid #ddd; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <a href="javascript:history.back()" class="btn-volver">← Volver</a>
+
+  <div class="medico-card">
+    <div class="medico-nombre">Dr. {{ medico.nombre }}</div>
+    <div class="medico-especialidad">{{ medico.especialidad }}</div>
+    <div class="medico-direccion">📍 {{ medico.get_lugar_atencion }}</div>
+    <div class="badges">
+      {% for os in medico.obras_sociales.all %}
+        <span class="badge">{{ os.nombre }}</span>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% if not user.is_authenticated %}
+    <div class="aviso-login">
+      🔒 Para reservar un turno necesitás
+      <a href="{% url 'login' %}?next={{ request.path }}" style="color:#1a73c8; font-weight:500;">
+        iniciar sesión
+      </a>
+      o
+      <a href="{% url 'seleccionar_registro' %}" style="color:#1a73c8; font-weight:500;">
+        crear una cuenta
+      </a>.
+    </div>
+  {% endif %}
+
+  {% if turnos_por_fecha %}
+    {% for fecha, turnos in turnos_por_fecha.items %}
+      <details>
+        <summary>
+          <span>🗓️ {{ fecha|date:"l, d \\d\\e F \\d\\e Y" }}</span>
+          <span class="badge-count">{{ turnos|length }} disponibles</span>
+        </summary>
+        <div class="turnos-grid">
+          {% for turno in turnos %}
+            {% if user.is_authenticated %}
+              <a href="{% url 'confirmar_turno' turno.id %}" class="turno-btn">
+                <strong>{{ turno.hora_inicio|time:"H:i" }}</strong>
+                <span>{{ turno.bloque.duracion_turno }} min</span>
+              </a>
+            {% else %}
+              <a href="{% url 'login' %}?next={% url 'detalle_medico_publico' medico.id %}"
+                 class="turno-bloqueado">
+                <strong>{{ turno.hora_inicio|time:"H:i" }}</strong>
+                <span>🔒 Iniciá sesión</span>
+              </a>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </details>
+    {% endfor %}
+  {% else %}
+    <div class="empty">
+      Este profesional no tiene turnos disponibles en los próximos días.
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

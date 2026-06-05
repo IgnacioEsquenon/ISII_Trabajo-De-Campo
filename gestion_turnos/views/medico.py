@@ -7,11 +7,14 @@ from gestion_turnos.models import Medico, BloqueHorario
 from gestion_turnos.forms import BloqueHorarioForm
 from gestion_turnos.servicios.gestor_agenda import GestorAgenda
 from gestion_turnos.repositorio.turnos import obtener_turnos_por_fecha
+from gestion_turnos.models import Turno, Reserva
+from datetime import date
+from datetime import timedelta
 
 @login_required
 def agenda_medico(request, medico_id):
-    medico = get_object_or_404(Medico, pk=medico_id, user=request.user)
-    gestor = GestorAgenda(medico)
+    medico  = get_object_or_404(Medico, pk=medico_id, user=request.user)
+    gestor  = GestorAgenda(medico)
 
     if request.method == 'POST':
         form = BloqueHorarioForm(request.POST)
@@ -31,22 +34,29 @@ def agenda_medico(request, medico_id):
         form = BloqueHorarioForm()
 
     # Turnos reservados futuros con datos del paciente
-    from gestion_turnos.models import Turno
-    from datetime import date
     turnos_reservados = Turno.objects.filter(
         bloque__medico = medico,
         esta_reservado = True,
-        fecha__gte     = date.today()
-    ).select_related(
-        'reserva__paciente'
-    ).order_by('fecha', 'hora_inicio')
+        esta_activo    = True,
+        fecha__gte     = date.today() - timedelta(days=30),
+    ).select_related('reserva__paciente').order_by('fecha', 'hora_inicio')
+
+    # Reservas canceladas recientes (últimos 30 días)
+    
+    reservas_canceladas = Reserva.objects.filter(
+        turno__bloque__medico = medico,
+        estado                = 'cancelada',
+        turno__fecha__gte     = date.today() - timedelta(days=30)
+    ).select_related('turno', 'paciente').order_by('-created_at')
 
     return render(request, 'agenda_medico.html', {
-        'medico':            medico,
-        'form':              form,
-        'bloques_por_dia':   gestor.obtener_estructura_bloques(),
-        'turnos_por_fecha':  obtener_turnos_por_fecha(medico),
-        'turnos_reservados': turnos_reservados,   # ← nuevo
+        'medico':              medico,
+        'form':                form,
+        'bloques_por_dia':     gestor.obtener_estructura_bloques(),
+        'turnos_por_fecha':    obtener_turnos_por_fecha(medico),
+        'turnos_reservados':   turnos_reservados,
+        'reservas_canceladas': reservas_canceladas,
+        'today': date.today(),
     })
 
 @login_required

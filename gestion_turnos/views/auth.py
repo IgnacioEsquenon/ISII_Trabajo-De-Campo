@@ -6,10 +6,13 @@ from gestion_turnos.servicios.usuarios import resolver_destino_usuario
 from gestion_turnos.servicios.registro import Registro
 
 def home_principal(request):
-    if not request.user.is_authenticated:
-        return render(request, 'home_principal.html')
-    ruta, kwargs = resolver_destino_usuario(request.user)
-    return redirect(ruta, **kwargs)
+    from gestion_turnos.models import Especialidad
+    if request.user.is_authenticated:
+        ruta, kwargs = resolver_destino_usuario(request.user)
+        return redirect(ruta, **kwargs)
+    return render(request, 'home_principal.html', {
+        'especialidades': Especialidad.objects.all()  # ← nuevo
+    })
 
 def seleccionar_registro(request):
     if request.user.is_authenticated:
@@ -75,3 +78,34 @@ def registro_paciente(request):
         form = RegistroPacienteForm()
 
     return render(request, 'registro_paciente.html', {'form': form})
+
+# Metodos de visitante 
+
+def busqueda_publica(request):
+    from gestion_turnos.models import Especialidad
+    from gestion_turnos.servicios.gestor_busqueda import GestorBusqueda
+
+    medicos     = None
+    especialidad = request.GET.get('especialidad', '').strip()
+
+    if especialidad:
+        gestor  = GestorBusqueda()
+        medicos = gestor.buscar_medicos(especialidad=especialidad)
+
+    return render(request, 'busqueda_publica.html', {
+        'especialidades': Especialidad.objects.all(),
+        'medicos':        medicos,
+        'especialidad':   especialidad,
+    })
+
+def detalle_medico_publico(request, medico_id):
+    from gestion_turnos.models import Medico
+    from gestion_turnos.servicios.gestor_busqueda import GestorBusqueda
+
+    gestor = GestorBusqueda()
+    medico = gestor.obtener_perfil_medico(medico_id)
+
+    return render(request, 'detalle_medico_publico.html', {
+        'medico':           medico,
+        'turnos_por_fecha': gestor.obtener_turnos_disponibles(medico_id),
+    })

@@ -69,15 +69,25 @@
 .btn-cancel { flex: 1; padding: 9px; background: transparent; border: 0.5px solid #ccc; border-radius: 8px; font-size: 13px; cursor: pointer; }
 .btn-cancel:hover { background: #f5f5f5; }
 .reservados-section { margin-top: 1.5rem; }
-.reservado-card { background: white; border: 0.5px solid #f09595;
-                  border-radius: 10px; padding: 1rem 1.25rem;
-                  margin-bottom: 8px; display: flex;
-                  justify-content: space-between; align-items: center; }
+.tabs { display: flex; gap: 8px; margin-bottom: 1rem; }
+.tab { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500;
+       cursor: pointer; border: 0.5px solid #ddd; background: white; color: #666; }
+.tab.activo { background: #1a73c8; color: white; border-color: #1a73c8; }
+.tab-content { display: none; }
+.tab-content.visible { display: block; }
+.reservado-card { background: white; border: 0.5px solid #ddd; border-radius: 10px;
+                  padding: 1rem 1.25rem; margin-bottom: 8px; display: flex;
+                  justify-content: space-between; align-items: flex-start; }
 .reservado-info { font-size: 13px; }
 .reservado-info strong { font-weight: 500; display: block; margin-bottom: 2px; }
-.reservado-info span { font-size: 12px; color: #666; }
+.reservado-info span { font-size: 12px; color: #666; display: block; }
+.reservado-motivo { font-size: 11px; color: #888; margin-top: 4px; font-style: italic; }
 .badge-reservado { font-size: 11px; padding: 3px 10px; border-radius: 20px;
                    background: #fcebeb; color: #a32d2d; white-space: nowrap; }
+.badge-cancelado  { font-size: 11px; padding: 3px 10px; border-radius: 20px;
+                    background: #f1efe8; color: #5f5e5a; white-space: nowrap; }
+.badge-atendido { font-size: 11px; padding: 3px 10px; border-radius: 20px;
+                  background: #e1f5ee; color: #085041; white-space: nowrap; }
 </style>
 {% endblock %}
 
@@ -184,25 +194,66 @@
 
 <div class="reservados-section">
   <div class="card">
-    <h2>Turnos reservados</h2>
-    {% if turnos_reservados %}
-      {% for turno in turnos_reservados %}
-        <div class="reservado-card">
-          <div class="reservado-info">
-            <strong>
-              {{ turno.fecha|date:"d/m/Y" }} — {{ turno.hora_inicio|time:"H:i" }}
-            </strong>
-            <span>
-              {{ turno.reserva.paciente.nombre }} {{ turno.reserva.paciente.apellido }}
-            </span>
-            <span>DNI: {{ turno.reserva.paciente.dni }}</span>
-          </div>
-          <span class="badge-reservado">Reservado</span>
-        </div>
-      {% endfor %}
+    <h2>Gestión de turnos</h2>
+
+    <div class="tabs">
+      <button class="tab activo" onclick="mostrarTab('reservados', this)">
+        Reservados/Atendidos ({{ turnos_reservados|length }})
+      </button>
+      <button class="tab" onclick="mostrarTab('cancelados', this)">
+        Cancelados recientes ({{ reservas_canceladas|length }})
+      </button>
+    </div>
+
+    {# Tab reservados #}
+      <div id="tab-reservados" class="tab-content visible">
+        {% if turnos_reservados %}
+          {% for turno in turnos_reservados %}
+            <div class="reservado-card">
+    <div class="reservado-info">
+      <strong>
+        {{ turno.fecha|date:"d/m/Y" }} — {{ turno.hora_inicio|time:"H:i" }}
+      </strong>
+      <span>{{ turno.reserva.paciente.nombre }} {{ turno.reserva.paciente.apellido }}</span>
+      <span>DNI: {{ turno.reserva.paciente.dni }}</span>
+      {% if turno.reserva.motivo_consulta %}
+        <span class="reservado-motivo">Motivo: {{ turno.reserva.motivo_consulta }}</span>
+      {% endif %}
+    </div>
+    {# Si la fecha ya pasó mostramos Atendido, sino Reservado #}
+    {% if turno.fecha < today %}
+      <span class="badge-atendido">Atendido</span>
     {% else %}
-      <p class="empty">No hay turnos reservados próximos.</p>
+      <span class="badge-reservado">Reservado</span>
     {% endif %}
+  </div>
+        {% endfor %}
+      {% else %}
+        <p class="empty">No hay turnos reservados próximos.</p>
+      {% endif %}
+    </div>
+
+    {# Tab cancelados #}
+    <div id="tab-cancelados" class="tab-content">
+      {% if reservas_canceladas %}
+        {% for reserva in reservas_canceladas %}
+          <div class="reservado-card">
+            <div class="reservado-info">
+              <strong>
+                {{ reserva.turno.fecha|date:"d/m/Y" }} — {{ reserva.turno.hora_inicio|time:"H:i" }}
+              </strong>
+              <span>{{ reserva.paciente.nombre }} {{ reserva.paciente.apellido }}</span>
+              <span>DNI: {{ reserva.paciente.dni }}</span>
+              <span>Cancelado el: {{ reserva.created_at|date:"d/m/Y" }}</span>
+            </div>
+            <span class="badge-cancelado">Cancelado</span>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="empty">No hay cancelaciones recientes.</p>
+      {% endif %}
+    </div>
+
   </div>
 </div>
 
@@ -273,5 +324,12 @@
   document.getElementById('modalEditar').addEventListener('click', function(e) {
     if (e.target === this) cerrarModal();
   });
+
+  function mostrarTab(nombre, boton) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('visible'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('activo'));
+  document.getElementById(`tab-${nombre}`).classList.add('visible');
+  boton.classList.add('activo');
+}
 </script>
 {% endblock %}

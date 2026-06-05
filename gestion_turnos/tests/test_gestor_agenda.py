@@ -17,7 +17,7 @@ class TestGestorAgendaCrearBloque(TestCase):
         )
         self.gestor = GestorAgenda(self.medico)
 
-    def test_CP01_creacion_exitosa(self):
+    def test_creacion_exitosa(self):
         """CP-01: Bloque válido sin superposición genera turnos correctamente."""
         bloque = self.gestor.crear_bloque_horario(
             dia_semana=0, hora_inicio=time(9,0),
@@ -26,7 +26,7 @@ class TestGestorAgendaCrearBloque(TestCase):
         self.assertIsNotNone(bloque.pk)
         self.assertTrue(Turno.objects.filter(bloque=bloque).exists())
 
-    def test_CP02_hora_fin_menor_a_inicio(self):
+    def test_hora_fin_menor_a_inicio(self):
         """CP-02: Hora fin menor a hora inicio lanza ValidationError."""
         with self.assertRaises(ValidationError):
             self.gestor.crear_bloque_horario(
@@ -34,7 +34,7 @@ class TestGestorAgendaCrearBloque(TestCase):
                 hora_fin=time(9,0), duracion_turno=30
             )
 
-    def test_CP03_duracion_mayor_al_bloque(self):
+    def test_duracion_mayor_al_bloque(self):
         """CP-03: Duración de turno mayor al bloque lanza ValidationError."""
         with self.assertRaises(ValidationError):
             self.gestor.crear_bloque_horario(
@@ -42,7 +42,7 @@ class TestGestorAgendaCrearBloque(TestCase):
                 hora_fin=time(9,20), duracion_turno=30
             )
 
-    def test_CP04_superposicion_con_bloque_existente(self):
+    def test_superposicion_con_bloque_existente(self):
         """CP-04: Bloque superpuesto con uno existente lanza ValidationError."""
         self.gestor.crear_bloque_horario(
             dia_semana=0, hora_inicio=time(9,0),
@@ -54,7 +54,7 @@ class TestGestorAgendaCrearBloque(TestCase):
                 hora_fin=time(10,30), duracion_turno=30
             )
 
-    def test_CP05_bloque_exactamente_del_tamanio_de_un_turno(self):
+    def test_bloque_exactamente_del_tamanio_de_un_turno(self):
         """CP-05: Bloque de 30 min con turnos de 30 min genera 1 turno por semana."""
         bloque = self.gestor.crear_bloque_horario(
             dia_semana=0, hora_inicio=time(9,0),
@@ -62,7 +62,7 @@ class TestGestorAgendaCrearBloque(TestCase):
         )
         self.assertEqual(Turno.objects.filter(bloque=bloque).count(), 4)
 
-    def test_CP06_genera_8_turnos_para_4_semanas(self):
+    def test_genera_8_turnos_para_4_semanas(self):
         """CP-06: Bloque de 1 hora con turnos de 30 min genera 8 turnos totales."""
         bloque = self.gestor.crear_bloque_horario(
             dia_semana=0, hora_inicio=time(9,0),
@@ -70,7 +70,7 @@ class TestGestorAgendaCrearBloque(TestCase):
         )
         self.assertEqual(Turno.objects.filter(bloque=bloque).count(), 8)
 
-    def test_CP07_no_genera_turnos_en_franjas_reservadas(self):
+    def test_no_genera_turnos_en_franjas_reservadas(self):
         """CP-07: No genera turno disponible en franja ya reservada."""
         bloque = self.gestor.crear_bloque_horario(
             dia_semana=0, hora_inicio=time(9,0),

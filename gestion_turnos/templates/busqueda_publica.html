@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block title %}Buscar profesionales — MEDORA{% endblock %}
+
+{% block extra_css %}
+<style>
+  .container { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+  .header { margin-bottom: 1.5rem; }
+  .header h1 { font-size: 18px; font-weight: 500; }
+  .header p  { font-size: 13px; color: #666; margin-top: 3px; }
+
+  .search-bar { background: white; border: 0.5px solid #ddd; border-radius: 12px;
+                padding: 1.25rem; margin-bottom: 1.5rem;
+                display: flex; gap: 10px; align-items: center; }
+  select { flex: 1; padding: 9px 10px; border: 0.5px solid #ccc;
+           border-radius: 8px; font-size: 13px; outline: none; }
+  select:focus { border-color: #1a73c8; }
+  .btn-buscar { padding: 9px 20px; background: #1a73c8; color: white;
+                border: none; border-radius: 8px; font-size: 13px;
+                font-weight: 500; cursor: pointer; white-space: nowrap; }
+  .btn-buscar:hover { background: #1558a0; }
+
+  .medico-card { background: white; border: 0.5px solid #ddd; border-radius: 12px;
+                 padding: 1.25rem; margin-bottom: 1rem; display: flex;
+                 justify-content: space-between; align-items: center; }
+  .medico-nombre { font-size: 15px; font-weight: 500; }
+  .medico-especialidad { font-size: 12px; color: #666; margin-top: 2px; }
+  .medico-direccion { font-size: 12px; color: #888; margin-top: 4px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .badge { font-size: 11px; padding: 3px 8px; border-radius: 20px;
+           background: #eef5fd; color: #0c447c; border: 0.5px solid #cce0f5; }
+  .btn-ver { font-size: 12px; padding: 6px 14px; background: #1a73c8;
+             color: white; border: none; border-radius: 8px;
+             text-decoration: none; white-space: nowrap; }
+  .btn-ver:hover { background: #1558a0; }
+
+  .empty { text-align: center; padding: 3rem; color: #aaa; font-size: 14px;
+           background: white; border-radius: 12px; border: 0.5px solid #ddd; }
+  .empty span { display: block; font-size: 2rem; margin-bottom: 0.5rem; }
+  .aviso-login { background: #fff8e1; border: 0.5px solid #ffe082; border-radius: 8px;
+                 padding: 10px 14px; font-size: 13px; color: #7a6000; margin-bottom: 1rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <div class="header">
+    <h1>Buscar profesionales</h1>
+    <p>Encontrá un especialista disponible.</p>
+  </div>
+
+  <form class="search-bar" method="GET">
+    <select name="especialidad">
+      <option value="">Todas las especialidades</option>
+      {% for e in especialidades %}
+        <option value="{{ e.nombre }}" {% if especialidad == e.nombre %}selected{% endif %}>
+          {{ e.nombre }}
+        </option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn-buscar">Buscar</button>
+  </form>
+
+  {% if not user.is_authenticated %}
+    <div class="aviso-login">
+      💡 Para reservar un turno necesitás
+      <a href="{% url 'login' %}" style="color:#1a73c8; font-weight:500;">iniciar sesión</a>
+      o
+      <a href="{% url 'seleccionar_registro' %}" style="color:#1a73c8; font-weight:500;">crear una cuenta</a>.
+    </div>
+  {% endif %}
+
+  {% if medicos is not None %}
+    {% if medicos %}
+      {% for medico in medicos %}
+        <div class="medico-card">
+          <div>
+            <div class="medico-nombre">Dr. {{ medico.nombre }}</div>
+            <div class="medico-especialidad">{{ medico.especialidad }}</div>
+            <div class="medico-direccion">📍 {{ medico.get_lugar_atencion }}</div>
+            <div class="badges">
+              {% for os in medico.obras_sociales.all %}
+                <span class="badge">{{ os.nombre }}</span>
+              {% endfor %}
+            </div>
+          </div>
+          <a href="{% url 'detalle_medico_publico' medico.id %}" class="btn-ver">
+            Ver turnos
+          </a>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty">
+        <span>🔍</span>
+        No encontramos profesionales con esa especialidad.
+      </div>
+    {% endif %}
+  {% endif %}
+
+</div>
+{% endblock %}

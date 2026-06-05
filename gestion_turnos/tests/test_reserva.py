@@ -34,14 +34,14 @@ class TestReservaEsCancelable(TestCase):
             turno=self.turno, paciente=paciente
         )
 
-    def test_CP13_cancelable_con_mas_de_24hs(self):
+    def test_cancelable_con_mas_de_24hs(self):
         """CP-13: Reserva con turno en 48hs es cancelable."""
         self.turno.fecha = date.today() + timedelta(days=2)
         self.turno.hora_inicio = time(9, 0)
         self.turno.save()
         self.assertTrue(self.reserva.es_cancelable())
 
-    def test_CP14_no_cancelable_con_menos_de_24hs(self):
+    def test_no_cancelable_con_menos_de_24hs(self):
         """CP-14: Reserva con turno en 12hs no es cancelable."""
         ahora = timezone.now() + timedelta(hours=12)
         self.turno.fecha       = ahora.date()
@@ -49,7 +49,7 @@ class TestReservaEsCancelable(TestCase):
         self.turno.save()
         self.assertFalse(self.reserva.es_cancelable())
 
-    def test_CP15_caso_borde_exactamente_24hs(self):
+    def test_caso_borde_exactamente_24hs(self):
         """CP-15: Exactamente 24hs antes no es cancelable."""
         ahora = timezone.now() + timedelta(hours=24)
         self.turno.fecha       = ahora.date()
@@ -57,13 +57,13 @@ class TestReservaEsCancelable(TestCase):
         self.turno.save()
         self.assertFalse(self.reserva.es_cancelable())
 
-    def test_CP16_cancelacion_libera_turno(self):
+    def test_cancelacion_libera_turno(self):
         """CP-16: Al cancelar la reserva el turno vuelve a estar disponible."""
         self.reserva.cancelar()
         self.turno.refresh_from_db()
         self.assertFalse(self.turno.esta_reservado)
 
-    def test_CP17_estado_pasa_a_cancelada(self):
+    def test_estado_pasa_a_cancelada(self):
         """CP-17: Al cancelar la reserva el estado queda en cancelada."""
         self.reserva.cancelar()
         self.reserva.refresh_from_db()
