@@ -21,3 +21,7 @@ class Ciudad(models.Model):
 
     def obtener_clinicas(self):
         return self.clinicas.all()
+
+    def obtener_consultorios_particulares(self):
+        from .consultorio_particular import ConsultorioParticular
+        return ConsultorioParticular.objects.filter(ciudad=self)

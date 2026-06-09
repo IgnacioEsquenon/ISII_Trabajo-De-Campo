@@ -1,10 +1,11 @@
 {% extends 'base.html' %}
+{% load dict_filters %}
 
 {% block title %}Dr. {{ medico.nombre }} — MEDORA{% endblock %}
 
 {% block extra_css %}
 <style>
-  .container { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+  .container { max-width: 1000px; margin: 2rem auto; padding: 0 1rem; }
   .btn-volver { font-size: 13px; color: #1a73c8; text-decoration: none; display: inline-block; margin-bottom: 1.5rem; }
   .btn-volver:hover { text-decoration: underline; }
 
@@ -14,24 +15,23 @@
   .badges { display: flex; flex-wrap: wrap; gap: 6px; }
   .badge { font-size: 11px; padding: 3px 8px; border-radius: 20px; background: #eef5fd; color: #0c447c; border: 0.5px solid #cce0f5; }
 
-  .turnos-section h2 { font-size: 15px; font-weight: 500; margin-bottom: 1rem; }
-  .empty { font-size: 13px; color: #aaa; padding: 2rem; text-align: center; background: white; border-radius: 12px; border: 0.5px solid #ddd; }
+  .navegacion { display: flex; gap: 10px; align-items: center; margin-bottom: 1.5rem; }
+  .btn-nav { background: white; border: 0.5px solid #ddd; border-radius: 8px; padding: 6px 14px; text-decoration: none; color: #1a1a1a; font-size: 13px; }
+  .btn-nav:hover { background: #f5f5f5; }
+  .semana-actual { font-size: 14px; font-weight: 500; }
 
-  details { background: white; border: 0.5px solid #ddd; border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
-  summary { padding: 12px 15px; font-size: 14px; font-weight: 500; cursor: pointer; background: #fafafa;
-            outline: none; list-style: none; display: flex; justify-content: space-between; align-items: center; }
-  summary:hover { background: #f1f1f1; }
-  summary::-webkit-details-marker { display: none; }
-  details[open] summary { border-bottom: 0.5px solid #ddd; background: #fff; }
-  .badge-count { font-size: 12px; padding: 4px 10px; border-radius: 20px; background: #f1efe8; color: #5f5e5a; }
-
-  .turnos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; padding: 15px; }
-  .turno-btn { padding: 10px; text-align: center; border-radius: 8px; border: 1px solid #cce0f5;
-               background: #eef5fd; color: #0c447c; cursor: pointer; text-decoration: none;
-               display: block; transition: background 0.2s; }
-  .turno-btn strong { font-size: 16px; display: block; margin-bottom: 3px; }
-  .turno-btn span { font-size: 11px; }
-  .turno-btn:hover { background: #d6eaf8; border-color: #1a73c8; }
+  .grid-semanal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+  .dia-header { background: #f9f9f9; border: 0.5px solid #ddd; border-radius: 8px 8px 0 0; padding: 8px; text-align: center; font-weight: 500; font-size: 13px; }
+  .dia-celda { background: white; border: 0.5px solid #ddd; border-top: none; border-radius: 0 0 8px 8px; min-height: 100px; padding: 8px; font-size: 12px; }
+  .turno-item { background: #eef5fd; border: 0.5px solid #cce0f5; border-radius: 6px; padding: 6px 8px; margin-bottom: 6px; text-align: center; }
+  .turno-hora { font-weight: 600; font-size: 14px; color: #0c447c; }
+  .turno-duracion { font-size: 11px; color: #5f5e5a; }
+  .btn-reservar { display: block; margin-top: 6px; padding: 4px; background: #1a73c8; color: white; border-radius: 4px; text-decoration: none; font-size: 12px; }
+  .btn-reservar:hover { background: #1558a0; }
+  .vacio { color: #ccc; text-align: center; padding-top: 20px; }
+  .alert { padding: 10px 14px; border-radius: 8px; font-size: 13px; }
+.alert-success { background: #e1f5ee; color: #085041; }
+.alert-error   { background: #fcebeb; color: #a32d2d; }
 </style>
 {% endblock %}
 
@@ -40,12 +40,13 @@
 
   <a href="javascript:history.back()" class="btn-volver">← Volver a resultados</a>
 
+  <!-- Datos del médico -->
   <div class="medico-card">
     <div class="medico-nombre">Dr. {{ medico.nombre }}</div>
     <div class="medico-especialidad">{{ medico.especialidad }}</div>
     <div style="font-size: 12px; color: #888; margin-top: 4px; margin-bottom: 1rem;">
-    📍 {{ medico.get_lugar_atencion }}
-  </div>
+      📍 {{ medico.get_lugar_atencion }}
+    </div>
     <div class="badges">
       {% for os in medico.obras_sociales.all %}
         <span class="badge">{{ os.nombre }}</span>
@@ -53,32 +54,40 @@
     </div>
   </div>
 
-  <div class="turnos-section">
-    <h2>Turnos disponibles — próximos días</h2>
-
-    {% if turnos_por_fecha %}
-      {% for fecha, turnos in turnos_por_fecha.items %}
-        <details>
-          <summary>
-            <span>🗓️ {{ fecha|date:"l, d \\d\\e F \\d\\e Y" }}</span>
-            <span class="badge-count">{{ turnos|length }} disponibles</span>
-          </summary>
-          <div class="turnos-grid">
-            {% for turno in turnos %}
-              <a href="{% url 'confirmar_turno' turno.id %}" class="turno-btn">
-                <strong>{{ turno.hora_inicio|time:"H:i" }}</strong>
-                <span>{{ turno.bloque.duracion_turno }} min</span>
-              </a>
-            {% endfor %}
-          </div>
-        </details>
-      {% endfor %}
-    {% else %}
-      <div class="empty">
-        Este profesional no tiene turnos disponibles en los próximos días.
-      </div>
-    {% endif %}
-
+  <!-- Navegación semanal -->
+  <div class="navegacion">
+  {% if fecha_inicio > today %}
+    <a href="?fecha={{ semana_anterior|date:'Y-m-d' }}" class="btn-nav">← Semana anterior</a>
+  {% else %}
+    <span class="btn-nav" style="visibility: hidden;">← Semana anterior</span>
+  {% endif %}
+  <span class="semana-actual">{{ fecha_inicio|date:"d/m/Y" }} - {{ fecha_inicio|date:"d/m/Y"|add:6 }}</span>
+  <a href="?fecha={{ semana_siguiente|date:'Y-m-d' }}" class="btn-nav">Semana siguiente →</a>
+</div>
+{% for message in messages %}
+  <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}" style="margin-bottom: 1rem;">
+    {{ message }}
   </div>
+{% endfor %}
+  <!-- Grilla semanal -->
+  <div class="grid-semanal">
+    {% for dia in dias_semana %}
+      <div>
+        <div class="dia-header">{{ dia|date:"D d/m" }}</div>
+        <div class="dia-celda">
+          {% for turno in turnos_por_fecha|get_item:dia %}
+            <div class="turno-item">
+              <div class="turno-hora">{{ turno.hora_inicio|time:"H:i" }}</div>
+              <div class="turno-duracion">{{ turno.bloque.duracion_turno }} min</div>
+              <a href="{% url 'confirmar_turno' turno.id %}" class="btn-reservar">Reservar</a>
+            </div>
+          {% empty %}
+            <div class="vacio">—</div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
 </div>
 {% endblock %}

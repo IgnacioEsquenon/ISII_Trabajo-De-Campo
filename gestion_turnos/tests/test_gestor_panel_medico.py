@@ -18,9 +18,10 @@ class TestGestorPanelMedico(TestCase):
         )
         self.bloque   = BloqueHorario.objects.create(
             medico=self.medico, dia_semana=0,
-            hora_inicio=time(9,0), hora_fin=time(10,0), duracion_turno=30
+            hora_inicio=time(9,0), hora_fin=time(10,0), duracion_turno=30, activo=True
         )
         self.hoy      = date.today()
+        # Crear turno y reserva activa para hoy
         self.turno    = Turno.objects.create(
             bloque=self.bloque, fecha=self.hoy,
             hora_inicio=time(9,0), hora_fin=time(9,30),
@@ -31,64 +32,78 @@ class TestGestorPanelMedico(TestCase):
             user=user_pac, nombre='Juan', apellido='Lopez', dni='22222222'
         )
         self.reserva  = Reserva.objects.create(
-            turno=self.turno, paciente=self.paciente
+            turno=self.turno, paciente=self.paciente, estado='activa'
         )
-        self.gestor   = GestorPanelMedico()
+        # Instanciar el gestor con el médico
+        self.gestor   = GestorPanelMedico(self.medico)
 
-    def test_obtener_turnos_del_dia(self):
-        """obtener_turnos_del_dia devuelve turnos de la fecha indicada."""
-        resultado = self.gestor.obtener_turnos_del_dia(self.medico, self.hoy)
+    # ------------------------------------------------------------
+    # obtener_turnos_del_dia (devuelve turnos, no reservas)
+    # ------------------------------------------------------------
+    def test_obtener_turnos_del_dia_devuelve_turnos_de_hoy(self):
+        resultado = self.gestor.obtener_turnos_del_dia(self.hoy)
         self.assertIn(self.turno, resultado)
 
     def test_obtener_turnos_del_dia_no_devuelve_otros_dias(self):
-        """obtener_turnos_del_dia no devuelve turnos de otros días."""
-        resultado = self.gestor.obtener_turnos_del_dia(
-            self.medico, self.hoy + timedelta(days=1)
-        )
+        resultado = self.gestor.obtener_turnos_del_dia(self.hoy + timedelta(days=1))
         self.assertNotIn(self.turno, resultado)
 
+    # ------------------------------------------------------------
+    # obtener_agenda_semanal (devuelve reservas activas agrupadas por fecha)
+    # ------------------------------------------------------------
     def test_obtener_agenda_semanal_agrupa_por_fecha(self):
-        """obtener_agenda_semanal devuelve dict agrupado por fecha."""
-        resultado = self.gestor.obtener_agenda_semanal(self.medico, self.hoy)
+        resultado = self.gestor.obtener_agenda_semanal(self.hoy)
         self.assertIsInstance(resultado, dict)
+        # Debe contener la reserva de hoy
+        self.assertIn(self.hoy, resultado)
+        self.assertIn(self.reserva, resultado[self.hoy])
 
+    def test_obtener_agenda_semanal_no_incluye_reservas_canceladas(self):
+        self.reserva.estado = 'cancelada'
+        self.reserva.save()
+        resultado = self.gestor.obtener_agenda_semanal(self.hoy)
+        # No debe aparecer porque solo se incluyen activas
+        self.assertNotIn(self.hoy, resultado)
+
+    # ------------------------------------------------------------
+    # obtener_historial
+    # ------------------------------------------------------------
     def test_obtener_historial_devuelve_reservas(self):
-        """obtener_historial devuelve las reservas del médico."""
-        resultado = self.gestor.obtener_historial(self.medico)
+        resultado = self.gestor.obtener_historial()
         self.assertIn(self.reserva, resultado)
 
     def test_obtener_historial_filtra_por_fecha(self):
-        """obtener_historial filtra correctamente por fecha desde."""
-        resultado = self.gestor.obtener_historial(
-            self.medico,
-            fecha_desde=self.hoy + timedelta(days=1)
-        )
+        resultado = self.gestor.obtener_historial(fecha_desde=self.hoy + timedelta(days=1))
         self.assertNotIn(self.reserva, resultado)
 
+    # ------------------------------------------------------------
+    # obtener_turnos_semana_siguiente / anterior (devuelven reservas)
+    # ------------------------------------------------------------
     def test_obtener_turnos_semana_siguiente(self):
-        """obtener_turnos_semana_siguiente devuelve la semana correcta."""
+        # Crear turno y reserva activa para la próxima semana
+        fecha_futura = self.hoy + timedelta(weeks=1)
         turno_futuro = Turno.objects.create(
-            bloque=self.bloque,
-            fecha=self.hoy + timedelta(weeks=1),
+            bloque=self.bloque, fecha=fecha_futura,
             hora_inicio=time(9,0), hora_fin=time(9,30),
-            esta_reservado=False, esta_activo=True
+            esta_reservado=True, esta_activo=True
         )
-        resultado = self.gestor.obtener_turnos_semana_siguiente(
-            self.medico, self.hoy
+        reserva_futura = Reserva.objects.create(
+            turno=turno_futuro, paciente=self.paciente, estado='activa'
         )
-        fechas = list(resultado.keys())
-        self.assertIn(turno_futuro.fecha, fechas)
+        resultado = self.gestor.obtener_turnos_semana_siguiente(self.hoy)
+        self.assertIn(fecha_futura, resultado)
+        self.assertIn(reserva_futura, resultado[fecha_futura])
 
     def test_obtener_turnos_semana_anterior(self):
-        """obtener_turnos_semana_anterior devuelve la semana correcta."""
+        fecha_pasada = self.hoy - timedelta(weeks=1)
         turno_pasado = Turno.objects.create(
-            bloque=self.bloque,
-            fecha=self.hoy - timedelta(weeks=1),
+            bloque=self.bloque, fecha=fecha_pasada,
             hora_inicio=time(9,0), hora_fin=time(9,30),
-            esta_reservado=False, esta_activo=True
+            esta_reservado=True, esta_activo=True
         )
-        resultado = self.gestor.obtener_turnos_semana_anterior(
-            self.medico, self.hoy
+        reserva_pasada = Reserva.objects.create(
+            turno=turno_pasado, paciente=self.paciente, estado='activa'
         )
-        fechas = list(resultado.keys())
-        self.assertIn(turno_pasado.fecha, fechas)
+        resultado = self.gestor.obtener_turnos_semana_anterior(self.hoy)
+        self.assertIn(fecha_pasada, resultado)
+        self.assertIn(reserva_pasada, resultado[fecha_pasada])

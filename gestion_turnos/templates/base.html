@@ -28,7 +28,9 @@
 
         {% if user.medico %}
           {# Menú médico #}
-          <a href="{% url 'agenda_medico' user.medico.id %}" class="nav-link">Mi agenda</a>
+         <a href="{% url 'agenda_semanal' user.medico.id %}" class="nav-link">Mi Agenda</a>
+  <a href="{% url 'configurar_bloques' user.medico.id %}" class="nav-link">Configurar Bloques</a>
+  <a href="{% url 'historial_medico' user.medico.id %}" class="nav-link">Historial</a>
 
         {% else %}
           {# Menú paciente #}

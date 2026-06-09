@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block title %}Historial Médico — {{ medico }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+  .header { margin-bottom: 1.5rem; }
+  .header h1 { font-size: 20px; font-weight: 500; }
+  .filtros { background: white; border: 0.5px solid #ddd; border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem; display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+  .filtro { display: flex; flex-direction: column; }
+  .filtro label { font-size: 12px; color: #666; margin-bottom: 4px; }
+  .filtro input { padding: 6px 10px; border: 0.5px solid #ccc; border-radius: 8px; font-size: 13px; }
+  .btn-filtrar { padding: 7px 16px; background: #1a73c8; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; margin-left: auto; }
+  .btn-filtrar:hover { background: #1558a0; }
+
+  .reserva-card { background: white; border: 0.5px solid #ddd; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+  .reserva-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; }
+  .reserva-paciente { font-size: 15px; font-weight: 500; }
+  .reserva-fecha { font-size: 12px; color: #666; margin-top: 2px; }
+  .badge-estado { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 500; }
+  .badge-activa    { background: #e1f5ee; color: #085041; }
+  .badge-atendida  { background: #eef5fd; color: #0c447c; }
+  .badge-cancelada { background: #f1efe8; color: #5f5e5a; }
+  .diagnostico { background: #f9f9f9; border-radius: 8px; padding: 10px; margin-top: 0.75rem; font-size: 13px; }
+  .empty { text-align: center; padding: 3rem; color: #aaa; }
+  .btn-filtro { 
+    padding: 6px 14px; 
+    border-radius: 8px; 
+    border: 0.5px solid #ccc; 
+    background: white; 
+    color: #555; 
+    text-decoration: none; 
+    font-size: 13px; 
+    transition: 0.2s; 
+}
+.btn-filtro:hover { 
+    background: #f0f7ff; 
+    border-color: #1a73c8; 
+    color: #1a73c8; 
+}
+.btn-filtro-activo { 
+    background: #1a73c8; 
+    color: white; 
+    border-color: #1a73c8; 
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="header">
+    <h1>Historial de Consultas - {{ medico }}</h1>
+<p>Consultas atendidas y canceladas.</p>
+  </div>
+
+  <form method="get" class="filtros">
+    <div class="filtro">
+      <label>Desde</label>
+      <input type="date" name="fecha_desde" value="{{ fecha_desde }}">
+    </div>
+    <div class="filtro">
+      <label>Hasta</label>
+      <input type="date" name="fecha_hasta" value="{{ fecha_hasta }}">
+    </div>
+    <div class="filtro">
+      <label>Paciente</label>
+      <input type="text" name="paciente" placeholder="Nombre o apellido" value="{{ filtro_paciente }}">
+    </div>
+
+    <div style="display: flex; gap: 10px; margin-top: 15px;">
+    <a href="{% url 'historial_medico' medico.id %}?fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}&paciente={{ filtro_paciente }}" 
+       class="btn-filtro {% if estado_filtro == '' %}btn-filtro-activo{% endif %}">Todas</a>
+    <a href="{% url 'historial_medico' medico.id %}?fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}&paciente={{ filtro_paciente }}&estado=canceladas" 
+       class="btn-filtro {% if estado_filtro == 'canceladas' %}btn-filtro-activo{% endif %}">Canceladas</a>
+    <a href="{% url 'historial_medico' medico.id %}?fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}&paciente={{ filtro_paciente }}&estado=atendidas" 
+       class="btn-filtro {% if estado_filtro == 'atendidas' %}btn-filtro-activo{% endif %}">Atendidas</a>
+</div>
+    <button type="submit" class="btn-filtrar">Filtrar</button>
+  </form>
+
+  {% if reservas %}
+    {% for reserva in reservas %}
+      <div class="reserva-card">
+        <div class="reserva-header">
+          <div>
+            <div class="reserva-paciente">{{ reserva.paciente }}</div>
+            <div class="reserva-fecha">{{ reserva.turno.fecha|date:"d/m/Y" }} — {{ reserva.turno.hora_inicio|time:"H:i" }}</div>
+          </div>
+          <span class="badge-estado badge-{{ reserva.estado }}">{{ reserva.get_estado_display }}</span>
+        </div>
+        {% if reserva.diagnostico %}
+          <div class="diagnostico">
+            <strong>Diagnóstico:</strong> {{ reserva.diagnostico }}
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty">No se encontraron consultas con esos filtros.</div>
+  {% endif %}
+</div>
+{% endblock %}

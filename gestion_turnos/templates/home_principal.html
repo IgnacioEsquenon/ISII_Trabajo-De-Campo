@@ -17,19 +17,51 @@
     .btn-register { background: #1a73c8; color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-weight: 500; font-size: 15px; transition: background 0.2s; }
     .btn-register:hover { background: #1558a0; }
 
-    /* Hero Section (El bloque principal tipo Doctoralia) */
+    /* Hero Section */
     .hero { margin-top: 70px; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); padding: 5rem 5%; text-align: center; }
     .hero h1 { font-size: 40px; color: #0d47a1; margin-bottom: 15px; letter-spacing: -0.5px; }
     .hero p { font-size: 18px; color: #444; margin-bottom: 40px; max-width: 600px; margin-left: auto; margin-right: auto; }
 
-    /* El Buscador Central */
-    .search-box { background: white; padding: 10px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.08); display: flex; max-width: 700px; margin: 0 auto; gap: 10px; }
-    .search-input { flex: 1; padding: 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; outline: none; transition: border-color 0.2s; }
-    .search-input:focus { border-color: #1a73c8; }
-    .btn-search { background: #1a73c8; color: white; border: none; padding: 0 30px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+    /* Buscador Central */
+    .search-box { 
+      background: white; 
+      padding: 15px; 
+      border-radius: 12px; 
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08); 
+      display: flex; 
+      flex-wrap: wrap;           /* permite que los campos bajen a otra línea */
+      justify-content: center; 
+      gap: 10px; 
+      max-width: 800px; 
+      margin: 0 auto; 
+    }
+    .search-input, .search-select { 
+      flex: 1 1 180px;            /* ancho mínimo de 180px, pero pueden crecer */
+      padding: 12px 15px; 
+      border: 1px solid #ddd; 
+      border-radius: 8px; 
+      font-size: 16px; 
+      outline: none; 
+      transition: border-color 0.2s; 
+      min-width: 160px; 
+    }
+    .search-input:focus, .search-select:focus { border-color: #1a73c8; }
+    .btn-search { 
+      flex: 0 0 auto;             /* no se estira */
+      background: #1a73c8; 
+      color: white; 
+      border: none; 
+      padding: 0 30px; 
+      border-radius: 8px; 
+      font-size: 16px; 
+      font-weight: 600; 
+      cursor: pointer; 
+      transition: 0.2s; 
+      white-space: nowrap; 
+    }
     .btn-search:hover { background: #1558a0; transform: translateY(-2px); }
 
-    /* Tarjetas de Beneficios / Especialidades */
+    /* Tarjetas de Beneficios */
     .features { padding: 5rem 5%; max-width: 1200px; margin: 0 auto; }
     .features-title { text-align: center; font-size: 28px; margin-bottom: 3rem; color: #1a1a1a; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
@@ -42,7 +74,7 @@
     /* Responsive */
     @media (max-width: 768px) {
       .search-box { flex-direction: column; background: transparent; box-shadow: none; padding: 0; }
-      .search-input { width: 100%; margin-bottom: 10px; }
+      .search-input, .search-select { width: 100%; margin-bottom: 10px; }
       .btn-search { width: 100%; padding: 15px; }
       .hero h1 { font-size: 32px; }
     }
@@ -73,12 +105,19 @@
     <p>Muchos profesionales de la salud confiables, listos para atenderte cuando lo necesites.</p>
     
     <form class="search-box" action="{% url 'busqueda_publica' %}" method="GET">
-  <select name="especialidad" class="search-input" style="flex:1;">
-    <option value="">Seleccioná una especialidad...</option>
+  <select name="especialidad" class="search-select">
+    <option value="">Especialidad...</option>
     {% for e in especialidades %}
       <option value="{{ e.nombre }}">{{ e.nombre }}</option>
     {% endfor %}
   </select>
+  <select name="obra_social" class="search-select">
+    <option value="">Obra social...</option>
+    {% for o in obras_sociales %}
+      <option value="{{ o.nombre }}">{{ o.nombre }}</option>
+    {% endfor %}
+  </select>
+  <input type="text" name="nombre" class="search-input" placeholder="Nombre del médico (opcional)">
   <button type="submit" class="btn-search">Buscar</button>
 </form>
   </header>
@@ -86,25 +125,16 @@
   <section class="features">
     <h2 class="features-title">¿Por qué elegir nuestra plataforma?</h2>
     <div class="grid">
-      
       <div class="card">
         <div class="card-icon">🔍</div>
         <h3>Búsqueda Rápida</h3>
         <p>Filtrá profesionales por especialidad, cercanía y obras sociales aceptadas de forma inmediata.</p>
       </div>
-
       <div class="card">
         <div class="card-icon">📅</div>
         <h3>Agenda 24/7</h3>
         <p>No esperes a que el consultorio esté abierto. Reservá tu turno médico a cualquier hora desde el celular.</p>
       </div>
-
-      <div class="card">
-        <div class="card-icon">⭐</div>
-        <h3>Opiniones Reales</h3>
-        <p>Ve las valoraciones para elegir al profesional que mejor se adapte a tus necesidades.</p>
-      </div>
-
     </div>
   </section>
 

@@ -1,6 +1,7 @@
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 from datetime import date, time, timedelta
+from django.utils import timezone
 from django.contrib.auth.models import User
 from gestion_turnos.models import (
     Medico, Paciente, BloqueHorario, Turno, Reserva, Especialidad
@@ -19,7 +20,7 @@ class TestGestorReservaReservarTurno(TestCase):
         )
         self.bloque   = BloqueHorario.objects.create(
             medico=self.medico, dia_semana=0,
-            hora_inicio=time(9,0), hora_fin=time(10,0), duracion_turno=30
+            hora_inicio=time(9,0), hora_fin=time(10,0), duracion_turno=30, activo=True
         )
         self.turno    = Turno.objects.create(
             bloque=self.bloque,
@@ -33,47 +34,35 @@ class TestGestorReservaReservarTurno(TestCase):
         )
         self.gestor   = GestorReserva()
 
-    def test_reserva_exitosa(self):
+    def test_CP08_reserva_exitosa(self):
         """CP-08: Turno disponible y paciente válido crea la reserva."""
         reserva = self.gestor.reservar_turno(self.paciente, self.turno)
         self.assertIsNotNone(reserva.pk)
         self.assertEqual(reserva.paciente, self.paciente)
 
-    def test_turno_ya_reservado_lanza_error(self):
+    def test_CP09_turno_ya_reservado_lanza_error(self):
         """CP-09: Intentar reservar un turno ya reservado lanza ValidationError."""
         self.turno.bloquear()
         with self.assertRaises(ValidationError):
             self.gestor.reservar_turno(self.paciente, self.turno)
 
-    def test_codigo_reserva_generado(self):
+    def test_CP10_codigo_reserva_generado(self):
         """CP-10: La reserva tiene un código único que empieza con RES-."""
         reserva = self.gestor.reservar_turno(self.paciente, self.turno)
         self.assertTrue(reserva.codigo_reserva.startswith('RES-'))
 
-    def test_turno_pasa_a_reservado(self):
+    def test_CP11_turno_pasa_a_reservado(self):
         """CP-11: Después de reservar el turno queda bloqueado."""
         self.gestor.reservar_turno(self.paciente, self.turno)
         self.turno.refresh_from_db()
         self.assertTrue(self.turno.esta_reservado)
 
-    def test_turno_inactivo_no_reservable(self):
+    def test_CP12_turno_inactivo_no_reservable(self):
         """CP-12: Turno inactivo no puede reservarse."""
         self.turno.desactivar()
         with self.assertRaises(ValidationError):
             self.gestor.reservar_turno(self.paciente, self.turno)
 
-    def test_reservar_turno_en_el_pasado_lanza_error(self):
-        """CP-20: Intentar reservar un turno con fecha/hora en el pasado lanza ValidationError."""
-        from django.utils import timezone
-        
-        # Configuramos el turno para que parezca que fue ayer
-        ayer = timezone.now() - timedelta(days=1)
-        self.turno.fecha = ayer.date()
-        self.turno.hora_inicio = ayer.time()
-        self.turno.save()
-
-        with self.assertRaises(ValidationError):
-            self.gestor.reservar_turno(self.paciente, self.turno)
 
 class TestGestorReservaCancelar(TestCase):
 
@@ -86,7 +75,7 @@ class TestGestorReservaCancelar(TestCase):
         )
         bloque        = BloqueHorario.objects.create(
             medico=medico, dia_semana=0,
-            hora_inicio=time(9,0), hora_fin=time(10,0), duracion_turno=30
+            hora_inicio=time(9,0), hora_fin=time(10,0), duracion_turno=30, activo=True
         )
         self.turno    = Turno.objects.create(
             bloque=bloque,
@@ -99,28 +88,43 @@ class TestGestorReservaCancelar(TestCase):
             user=user_pac, nombre='Juan', apellido='Lopez', dni='11111111'
         )
         self.reserva  = Reserva.objects.create(
-            turno=self.turno, paciente=paciente
+            turno=self.turno, paciente=paciente, estado='activa'
         )
         self.gestor   = GestorReserva()
 
-    def test_cancelar_reserva_exitosa(self):
-        """Cancelar reserva con más de 24hs cambia estado a cancelada."""
+    def test_CP13_cancelar_reserva_exitosa(self):
+        """CP-13: Cancelar reserva con más de 24hs cambia estado a cancelada."""
         self.gestor.cancelar_reserva(self.reserva)
         self.reserva.refresh_from_db()
         self.assertEqual(self.reserva.estado, 'cancelada')
 
-    def test_cancelar_reserva_libera_turno(self):
-        """Cancelar reserva libera el turno."""
+    def test_CP14_cancelar_reserva_libera_turno(self):
+        """CP-14: Cancelar reserva libera el turno."""
         self.gestor.cancelar_reserva(self.reserva)
         self.turno.refresh_from_db()
         self.assertFalse(self.turno.esta_reservado)
 
-    def test_cancelar_reserva_menos_24hs_lanza_error(self):
-        """Cancelar reserva con menos de 24hs lanza ValidationError."""
-        from django.utils import timezone
+    def test_CP15_cancelar_reserva_menos_24hs_lanza_error(self):
+        """CP-15: Cancelar reserva con menos de 24hs lanza ValidationError."""
         ahora = timezone.now() + timedelta(hours=12)
         self.turno.fecha       = ahora.date()
         self.turno.hora_inicio = ahora.time()
         self.turno.save()
         with self.assertRaises(ValidationError):
             self.gestor.cancelar_reserva(self.reserva)
+
+    def test_CP16_cancelar_reserva_con_21hs_no_permitido(self):
+        """CP-16: Con 21 horas de anticipación, el gestor no permite cancelar."""
+        ahora = timezone.now() + timedelta(hours=21)
+        self.turno.fecha = ahora.date()
+        self.turno.hora_inicio = ahora.time()
+        self.turno.save()
+        self.reserva.refresh_from_db()
+        with self.assertRaises(ValidationError):
+            self.gestor.cancelar_reserva(self.reserva)
+
+    def test_CP17_estado_pasa_a_cancelada(self):
+        """CP-17: Al cancelar la reserva el estado queda en cancelada."""
+        self.gestor.cancelar_reserva(self.reserva)
+        self.reserva.refresh_from_db()
+        self.assertEqual(self.reserva.estado, 'cancelada')

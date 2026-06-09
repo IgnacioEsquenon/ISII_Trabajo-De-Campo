@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}Confirmar Atención — {{ reserva.paciente }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Hereda estilos de agenda_medico.html */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #1a1a1a; }
+  .container { max-width: 700px; margin: 2rem auto; padding: 0 1rem; }
+  header { margin-bottom: 1.5rem; }
+  header h1 { font-size: 20px; font-weight: 500; }
+  header p  { font-size: 13px; color: #666; margin-top: 3px; }
+  .card { background: white; border: 0.5px solid #ddd; border-radius: 12px; padding: 1.5rem; }
+  .card h2 { font-size: 16px; font-weight: 500; margin-bottom: 1.25rem;
+             padding-bottom: 0.75rem; border-bottom: 0.5px solid #eee; }
+  .detail-row { margin-bottom: 12px; }
+  .detail-label { font-size: 12px; color: #666; margin-bottom: 2px; }
+  .detail-value { font-size: 14px; font-weight: 500; }
+  label { display: block; font-size: 13px; font-weight: 500; margin: 16px 0 6px; }
+  textarea { width: 100%; padding: 10px; border: 0.5px solid #ccc; border-radius: 8px;
+             font-size: 13px; resize: vertical; font-family: inherit; }
+  .btn-confirm { width: 100%; margin-top: 14px; padding: 10px; background: #1a73c8;
+                 color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
+  .btn-confirm:hover { background: #1558a0; }
+  .btn-back { font-size: 13px; color: #1a73c8; text-decoration: none; display: inline-block; margin-top: 10px; }
+  .btn-back:hover { text-decoration: underline; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <header>
+    <h1>Confirmar atención médica</h1>
+    <p>Complete el diagnóstico para finalizar la consulta</p>
+  </header>
+
+  <div class="card">
+    <h2>Datos de la reserva</h2>
+
+    <div class="detail-row">
+      <div class="detail-label">Paciente</div>
+      <div class="detail-value">{{ reserva.paciente }}</div>
+    </div>
+
+    <div class="detail-row">
+      <div class="detail-label">Fecha y hora</div>
+      <div class="detail-value">{{ reserva.turno.fecha|date:"l d/m/Y" }} — {{ reserva.turno.hora_inicio|time:"H:i" }}</div>
+    </div>
+
+    {% if reserva.motivo_consulta %}
+    <div class="detail-row">
+      <div class="detail-label">Motivo de consulta</div>
+      <div class="detail-value">{{ reserva.motivo_consulta }}</div>
+    </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <label for="diagnostico">Diagnóstico médico</label>
+      <textarea name="diagnostico" id="diagnostico" rows="5" 
+                placeholder="Redacte el diagnóstico de la consulta..." required></textarea>
+
+      <button type="submit" class="btn-confirm">Confirmar atención</button>
+    </form>
+  </div>
+
+  <a href="{% url 'agenda_semanal' medico_id=reserva.turno.bloque.medico.id %}" 
+     class="btn-back">← Volver a la agenda</a>
+</div>
+{% endblock %}

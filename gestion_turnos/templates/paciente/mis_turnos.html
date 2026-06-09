@@ -22,6 +22,7 @@
   .badge-estado { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 500; }
   .badge-activa    { background: #e1f5ee; color: #085041; }
   .badge-cancelada { background: #f1efe8; color: #5f5e5a; }
+  .badge-atendida  { background: #eef5fd; color: #0c447c; }
 
   .reserva-info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 0.75rem; }
   .info-item { font-size: 12px; }
@@ -42,6 +43,28 @@
   .alert { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 1rem; }
   .alert-success { background: #e1f5ee; color: #085041; }
   .alert-error   { background: #fcebeb; color: #a32d2d; }
+
+  .btn-filtro { 
+      padding: 6px 14px; 
+      border-radius: 8px; 
+      border: 0.5px solid #ccc; 
+      background: white; 
+      color: #555; 
+      text-decoration: none; 
+      font-size: 13px; 
+      transition: 0.2s; 
+      display: inline-block;
+  }
+  .btn-filtro:hover { 
+      background: #f0f7ff; 
+      border-color: #1a73c8; 
+      color: #1a73c8; 
+  }
+  .btn-filtro-activo { 
+      background: #1a73c8; 
+      color: white; 
+      border-color: #1a73c8; 
+  }
 </style>
 {% endblock %}
 
@@ -51,7 +74,17 @@
   <div class="header">
     <h1>Mis turnos</h1>
     <p>Historial de reservas y turnos activos.</p>
+    
+    <div style="display: flex; gap: 10px; margin-top: 15px;">
+        <a href="{% url 'mis_turnos' %}" 
+           class="btn-filtro {% if estado_filtro == '' %}btn-filtro-activo{% endif %}">Todas</a>
+        <a href="{% url 'mis_turnos' %}?estado=activas" 
+           class="btn-filtro {% if estado_filtro == 'activas' %}btn-filtro-activo{% endif %}">Próximas</a>
+        <a href="{% url 'mis_turnos' %}?estado=historial" 
+           class="btn-filtro {% if estado_filtro == 'historial' %}btn-filtro-activo{% endif %}">Historial</a>
+    </div>
   </div>
+
   {% for message in messages %}
     <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}">
       {{ message }}
@@ -61,18 +94,17 @@
   {% if reservas %}
     {% for reserva in reservas %}
       <div class="reserva-card">
-
         <div class="reserva-header">
           <div>
             <div class="reserva-medico">Dr. {{ reserva.turno.bloque.medico.nombre }}</div>
             <div class="reserva-especialidad">{{ reserva.turno.bloque.medico.especialidad }}</div>
           </div>
           <span class="badge-estado badge-{{ reserva.estado }}">
-          {% if reserva.estado == 'activa' and reserva.turno.fecha < today %}
-            Atendida
-          {% else %}
-            {{ reserva.get_estado_display }}
-          {% endif %}
+            {% if reserva.estado == 'activa' and reserva.turno.fecha < today %}
+              Atendida
+            {% else %}
+              {{ reserva.get_estado_display }}
+            {% endif %}
           </span>
         </div>
 
@@ -103,17 +135,15 @@
               <a href="{% url 'cancelar_turno' reserva.id %}" class="btn-cancelar">Cancelar</a>
             </div>
           {% else %}
-            <span class="texto-cancelada">Turno cancelado</span>
+            <span class="texto-cancelada">Reserva {{ reserva.estado }}</span>
           {% endif %}
         </div>
-
       </div>
     {% endfor %}
   {% else %}
     <div class="empty">
       <span>📋</span>
-      No tenés turnos reservados todavía.
-      <a href="{% url 'buscar_turnos' %}" style="display: block; margin-top: 10px; color: #1a73c8; font-size: 13px;">Buscar un turno</a>
+      No tenés turnos que coincidan con el filtro seleccionado.
     </div>
   {% endif %}
 

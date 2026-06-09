@@ -10,6 +10,6 @@ def resolver_destino_usuario(user):
 
     try:
         medico = Medico.objects.get(user=user)
-        return ('agenda_medico', {'medico_id': medico.id})
+        return ('agenda_semanal', {'medico_id': medico.id})
     except Medico.DoesNotExist:
         return ('dashboard_paciente', {})

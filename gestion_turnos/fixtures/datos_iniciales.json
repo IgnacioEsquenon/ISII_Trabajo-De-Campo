@@ -1,0 +1,79 @@
+[
+  {
+    "model": "gestion_turnos.provincia",
+    "pk": 1,
+    "fields": { "nombre": "Buenos Aires" }
+  },
+  {
+    "model": "gestion_turnos.provincia",
+    "pk": 2,
+    "fields": { "nombre": "Córdoba" }
+  },
+  {
+    "model": "gestion_turnos.ciudad",
+    "pk": 1,
+    "fields": { "nombre": "La Plata", "provincia": 1 }
+  },
+  {
+    "model": "gestion_turnos.ciudad",
+    "pk": 2,
+    "fields": { "nombre": "Mar del Plata", "provincia": 1 }
+  },
+  {
+    "model": "gestion_turnos.ciudad",
+    "pk": 3,
+    "fields": { "nombre": "Córdoba", "provincia": 2 }
+  },
+  {
+    "model": "gestion_turnos.clinica",
+    "pk": 1,
+    "fields": {
+      "nombre": "Hospital Italiano",
+      "calle": "Av. Belgrano",
+      "numero": "1500",
+      "telefono": "221-5550001",
+      "ciudad": 1
+    }
+  },
+  {
+    "model": "gestion_turnos.clinica",
+    "pk": 2,
+    "fields": {
+      "nombre": "Sanatorio Allende",
+      "calle": "Av. Hipólito Yrigoyen",
+      "numero": "350",
+      "telefono": "351-5550002",
+      "ciudad": 3
+    }
+  },
+  {
+    "model": "gestion_turnos.especialidad",
+    "pk": 1,
+    "fields": { "nombre": "Cardiología", "descripcion": "Enfermedades del corazón" }
+  },
+  {
+    "model": "gestion_turnos.especialidad",
+    "pk": 2,
+    "fields": { "nombre": "Dermatología", "descripcion": "Enfermedades de la piel" }
+  },
+  {
+    "model": "gestion_turnos.especialidad",
+    "pk": 3,
+    "fields": { "nombre": "Pediatría", "descripcion": "Salud infantil" }
+  },
+  {
+    "model": "gestion_turnos.obrasocial",
+    "pk": 1,
+    "fields": { "nombre": "OSDE", "siglas": "OSDE" }
+  },
+  {
+    "model": "gestion_turnos.obrasocial",
+    "pk": 2,
+    "fields": { "nombre": "Swiss Medical", "siglas": "SM" }
+  },
+  {
+    "model": "gestion_turnos.obrasocial",
+    "pk": 3,
+    "fields": { "nombre": "IOMA", "siglas": "IOMA" }
+  }
+]

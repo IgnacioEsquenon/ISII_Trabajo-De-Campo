@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% load dict_filters %}
+{% block title %}Configurar Bloques — {{ medico }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+  .header { margin-bottom: 1.5rem; }
+  .header h1 { font-size: 20px; font-weight: 500; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start; }
+  .card { background: white; border: 0.5px solid #ddd; border-radius: 12px; padding: 1.25rem; }
+  .card h2 { font-size: 14px; font-weight: 500; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 0.5px solid #eee; }
+  label { display: block; font-size: 12px; color: #666; margin-bottom: 3px; margin-top: 10px; }
+  select, input[type="time"] { width: 100%; padding: 7px 10px; border: 0.5px solid #ccc; border-radius: 8px; font-size: 13px; }
+  .errorlist { color: #a32d2d; font-size: 12px; margin-top: 4px; padding-left: 1rem; }
+  .btn-save { width: 100%; margin-top: 14px; padding: 9px; background: #1a73c8; color: white; border: none; border-radius: 8px; font-size: 13px; cursor: pointer; }
+  .btn-save:hover { background: #1558a0; }
+  .dia-label { font-size: 11px; font-weight: 500; color: #999; text-transform: uppercase; letter-spacing: 0.05em; margin: 12px 0 6px; }
+  .bloque { display: flex; flex-direction: column; padding: 10px; border-radius: 8px; border: 0.5px solid #ddd; margin-bottom: 8px; background: white; }
+  .bloque.activo { border-color: #1a73c8; background: #eef5fd; }
+  .bloque-header { display: flex; justify-content: space-between; align-items: center; }
+  .bloque-hora { font-size: 13px; font-weight: 500; }
+  .bloque.activo .bloque-hora { color: #0c447c; }
+  .btn-sm { font-size: 11px; padding: 3px 8px; border-radius: 4px; cursor: pointer; border: 0.5px solid #ccc; background: transparent; color: #555; text-decoration: none; margin-left: 4px; }
+  .btn-sm:hover { background: #f5f5f5; }
+  .btn-del { color: #a32d2d; border-color: #f09595; }
+  .btn-del:hover { background: #fcebeb; }
+  .empty { font-size: 12px; color: #aaa; padding: 6px 0; }
+  .alert { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 1rem; }
+  .alert-success { background: #e1f5ee; color: #085041; }
+
+  /* estilos para los turnos desplegables */
+  .turnos-container { margin-top: 10px; }
+  details { margin-top: 5px; border: 0.5px solid #ddd; border-radius: 6px; overflow: hidden; }
+  summary { padding: 6px 10px; font-size: 12px; font-weight: 500; cursor: pointer; background: #fafafa; list-style: none; }
+  summary:hover { background: #f1f1f1; }
+  details[open] summary { border-bottom: 0.5px solid #ddd; background: #fff; }
+  .turnos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 6px; padding: 8px; }
+  .turno-box { padding: 5px; text-align: center; border-radius: 6px; border: 1px solid #ddd; font-size: 11px; }
+  .turno-disponible { background: #eef5fd; border-color: #cce0f5; color: #0c447c; }
+  .turno-reservado { background: #fcebeb; border-color: #f09595; color: #a32d2d; }
+  .turno-box strong { font-size: 13px; display: block; margin-bottom: 2px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="header">
+    <h1>Configurar Bloques Horarios — {{ medico }}</h1>
+  </div>
+
+  {% for message in messages %}
+    <div class="alert alert-success">{{ message }}</div>
+  {% endfor %}
+
+  <div class="grid">
+    <div class="card">
+      <h2>Nuevo bloque</h2>
+      <form method="post">
+        {% csrf_token %}
+        <label>Día de la semana</label>
+        {{ form.dia_semana }}
+        {{ form.dia_semana.errors }}
+
+        <label>Hora inicio</label>
+        {{ form.hora_inicio }}
+        {{ form.hora_inicio.errors }}
+
+        <label>Hora fin</label>
+        {{ form.hora_fin }}
+        {{ form.hora_fin.errors }}
+
+        <label>Duración de los turnos</label>
+        {{ form.duracion_turno }}
+        {{ form.duracion_turno.errors }}
+        {{ form.non_field_errors }}
+
+        <button type="submit" class="btn-save">Guardar bloque</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Bloques activos</h2>
+      {% if bloques_por_dia %}
+        {% for dia, bloques in bloques_por_dia.items %}
+          <div class="dia-label">{{ dia }}</div>
+          {% for bloque in bloques %}
+            <div class="bloque activo">
+              <div class="bloque-header">
+                <span class="bloque-hora">
+                  {{ bloque.hora_inicio|time:"H:i" }} – {{ bloque.hora_fin|time:"H:i" }}
+                </span>
+                <div>
+                  <a href="{% url 'editar_bloque' bloque.id %}" class="btn-sm">Editar</a>
+                  <form method="post" action="{% url 'eliminar_bloque' bloque.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-sm btn-del"
+                            onclick="return confirm('¿Eliminar este bloque?')">
+                      Eliminar
+                    </button>
+                  </form>
+                </div>
+              </div>
+
+              <!-- Turnos generados para este bloque -->
+              {% with turnos_fecha=turnos_por_bloque|get_item:bloque.id %}
+                {% if turnos_fecha %}
+                  <div class="turnos-container">
+                    {% for fecha, lista_turnos in turnos_fecha.items %}
+                      <details>
+                        <summary>
+                          🗓️ {{ fecha|date:"d/m/Y" }} — {{ lista_turnos|length }} turnos
+                        </summary>
+                        <div class="turnos-grid">
+                          {% for turno in lista_turnos %}
+                            <div class="turno-box {% if turno.esta_reservado %}turno-reservado{% else %}turno-disponible{% endif %}">
+                              <strong>{{ turno.hora_inicio|time:"H:i" }}</strong>
+                              {% if turno.esta_reservado %}Reservado{% else %}Libre{% endif %}
+                            </div>
+                          {% endfor %}
+                        </div>
+                      </details>
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  <div class="empty" style="font-size:11px; margin-top:6px;">Sin turnos generados aún.</div>
+                {% endif %}
+              {% endwith %}
+            </div>
+          {% endfor %}
+        {% endfor %}
+      {% else %}
+        <p class="empty">No hay bloques configurados todavía.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

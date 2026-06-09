@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
-from gestion_turnos.models import Medico, Paciente, clinica, medico
-from gestion_turnos.models.consultorio_particular import ConsultorioParticular
+from gestion_turnos.models import Medico, Paciente, Clinica, Provincia, Ciudad, ConsultorioParticular
+
 
 class Registro:
     """
@@ -25,6 +25,11 @@ class Registro:
             raise ValidationError(f"Ya existe un médico con la matrícula {matricula}.")
 
     @staticmethod
+    def validar_fortaleza_contrasena(contrasena):
+        if len(contrasena) < 8:
+            raise ValidationError("La contraseña debe tener al menos 8 caracteres.")
+
+    @staticmethod
     def registrar_usuario(form):
         """
         Crea el User base de Django a partir del formulario.
@@ -38,7 +43,6 @@ class Registro:
     @staticmethod
     def registrar_paciente(usuario, dni, telefono, obra_social=None):
         """Crea el perfil Paciente vinculado al usuario."""
-        from gestion_turnos.models import Paciente
         usuario.save()
         return Paciente.objects.create(
             user        = usuario,
@@ -50,12 +54,11 @@ class Registro:
         )
     
     @staticmethod
-    def registrar_medico(usuario, matricula, especialidad, estado='aprobado', clinica=None, obras_sociales=None, **kwargs):
+    def registrar_medico(usuario, matricula, especialidad, estado='pendiente', clinica=None, obras_sociales=None, **kwargs):
         """
         Crea el perfil Medico vinculado al usuario.
         Si es particular también crea el ConsultorioParticular.
         """
-        from gestion_turnos.models import ConsultorioParticular
     
         usuario.save()
         es_particular = clinica is None
@@ -76,12 +79,12 @@ class Registro:
     # Si atiende de forma particular creamos su consultorio
         if es_particular and kwargs.get('calle'):
             ConsultorioParticular.objects.create(
-            medico     = medico,
-            calle      = kwargs.get('calle', ''),
-            numero     = kwargs.get('numero', ''),
-            piso_depto = kwargs.get('piso_depto', ''),
-            telefono   = kwargs.get('telefono_consultorio', ''),
-            ciudad     = kwargs.get('ciudad_consultorio'),  
-        )
+                medico     = medico,
+                calle      = kwargs.get('calle', ''),
+                numero     = kwargs.get('numero', ''),
+                piso_depto = kwargs.get('piso_depto', ''),
+                telefono   = kwargs.get('telefono_consultorio', ''),
+                ciudad     = kwargs.get('ciudad_consultorio'),  
+            )
 
         return medico

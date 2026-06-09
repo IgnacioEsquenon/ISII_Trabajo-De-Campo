@@ -34,7 +34,8 @@
 
     <form method="post">
       {% csrf_token %}
-
+      <label>Nombre del médico</label>
+<input type="text" name="nombre" placeholder="Nombre o apellido" style="width: 100%; padding: 8px 10px; border: 0.5px solid #ccc; border-radius: 8px; font-size: 13px;">
       <label>Especialidad</label>
       <select name="especialidad">
         <option value="">Todas las especialidades</option>

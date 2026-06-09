@@ -29,6 +29,12 @@ class Medico(models.Model):
     def __str__(self):
         return f"Dr. {self.nombre} ({self.especialidad})"
 
+    @property
+    def nombre_completo(self):
+        if self.user:
+            return f"{self.user.first_name} {self.user.last_name}"
+        return self.nombre
+        
     def aprobar(self):
         self.estado = 'aprobado'
         self.save()

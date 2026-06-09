@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load dict_filters %}
+{% block title %}Agenda Semanal — {{ medico }}{% endblock %}
+{% block extra_css %}
+<style>
+  .container { max-width: 1000px; margin: 2rem auto; padding: 0 1rem; }
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+  .header h1 { font-size: 20px; font-weight: 500; }
+  .navegacion { display: flex; gap: 10px; align-items: center; }
+  .btn-nav { background: white; border: 0.5px solid #ddd; border-radius: 8px; padding: 6px 14px; text-decoration: none; color: #1a1a1a; font-size: 13px; }
+  .btn-nav:hover { background: #f5f5f5; }
+  .semana-actual { font-size: 14px; font-weight: 500; }
+
+  .grid-semanal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+  .dia-header { background: #f9f9f9; border: 0.5px solid #ddd; border-radius: 8px 8px 0 0; padding: 8px; text-align: center; font-weight: 500; font-size: 13px; }
+  .dia-celda { background: white; border: 0.5px solid #ddd; border-top: none; border-radius: 0 0 8px 8px; min-height: 120px; padding: 8px; font-size: 12px; }
+  .reserva-item { background: #eef5fd; border: 0.5px solid #cce0f5; border-radius: 6px; padding: 6px 8px; margin-bottom: 6px; }
+  .reserva-hora { font-weight: 600; font-size: 13px; color: #0c447c; }
+  .reserva-paciente { font-size: 12px; margin-top: 2px; }
+  .btn-atender { display: inline-block; margin-top: 4px; font-size: 11px; padding: 3px 8px; background: #1a73c8; color: white; border-radius: 4px; text-decoration: none; }
+  .btn-atender:hover { background: #1558a0; }
+  .vacio { color: #ccc; text-align: center; padding-top: 20px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="header">
+    <h1>Agenda de {{ medico }}</h1>
+    <div class="navegacion">
+      <a href="?fecha={{ semana_anterior|date:'Y-m-d' }}" class="btn-nav">← Semana anterior</a>
+      <span class="semana-actual">{{ fecha_inicio|date:"d/m/Y" }} - {{ fecha_inicio|date:"d/m/Y"|add:6 }}</span>
+      <a href="?fecha={{ semana_siguiente|date:'Y-m-d' }}" class="btn-nav">Semana siguiente →</a>
+    </div>
+  </div>
+
+  <div class="grid-semanal">
+    {% for dia in dias_semana %}
+      <div>
+        <div class="dia-header">{{ dia|date:"D d/m" }}</div>
+        <div class="dia-celda">
+          {% for reserva in agenda|get_item:dia %}
+            <div class="reserva-item">
+              <div class="reserva-hora">{{ reserva.turno.hora_inicio|time:"H:i" }}</div>
+              <div class="reserva-paciente">{{ reserva.paciente }}</div>
+              {% if reserva.estado == 'activa' %}
+                <a href="{% url 'confirmar_atencion' reserva.id %}" class="btn-atender">Atender</a>
+              {% endif %}
+            </div>
+          {% empty %}
+            <div class="vacio">—</div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

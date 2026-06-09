@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from gestion_turnos.models import Turno, Reserva
 
 class GestorReserva:
@@ -13,19 +14,14 @@ class GestorReserva:
         Valida disponibilidad, bloquea el turno y genera el código.
         Devuelve la reserva creada.
         """
-        if not turno.esta_disponible():
-            raise ValidationError('El turno ya no está disponible.')
-
-        # Creamos la reserva — el código se genera en save()
-        reserva = Reserva.objects.create(
-            turno           = turno,
-            paciente        = paciente,
-            motivo_consulta = motivo_consulta,
-        )
-
-        # Bloqueamos el turno
-        turno.bloquear()
-
+        with transaction.atomic():
+            if not turno.bloquear():
+                raise ValidationError('El turno ya no está disponible.')
+            reserva = Reserva.objects.create(
+                turno=turno,
+                paciente=paciente,
+                motivo_consulta=motivo_consulta,
+            )
         return reserva
 
     def cancelar_reserva(self, reserva):
@@ -39,3 +35,8 @@ class GestorReserva:
             )
         # Delegamos cancelar al modelo — él libera el turno
         reserva.cancelar()
+
+    def confirmar_atencion(self, reserva, diagnostico):
+        if reserva.estado != 'activa':
+            raise ValidationError("Solo se puede confirmar atención de una reserva activa.")
+        reserva.confirmar_atencion(diagnostico)

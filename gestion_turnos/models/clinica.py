@@ -6,7 +6,6 @@ class Clinica(models.Model):
     calle        = models.CharField(max_length=100)
     numero       = models.CharField(max_length=20)
     piso_depto   = models.CharField(max_length=30, blank=True)
-    codigo_postal = models.CharField(max_length=10, blank=True)
     telefono     = models.CharField(max_length=25, blank=True)
     ciudad       = models.ForeignKey(
         Ciudad,

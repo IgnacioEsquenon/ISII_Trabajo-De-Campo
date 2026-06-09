@@ -1,6 +1,6 @@
 from django.db import models
 from django.core.exceptions import ValidationError
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from .medico import Medico
 
 class BloqueHorario(models.Model):
@@ -23,10 +23,9 @@ class BloqueHorario(models.Model):
 
     class Meta:
         ordering        = ['dia_semana', 'hora_inicio']
-        unique_together = ['medico', 'dia_semana', 'hora_inicio']
 
     def __str__(self):
-        return f"{self.get_dia_semana_display()} {self.hora_inicio}–{self.hora_fin}"
+        return f"{self.obtener_nombre_dia()} {self.hora_inicio}–{self.hora_fin}"
 
     def clean(self):
         #Validaciones lógicas puras, sin tocar DB
@@ -44,17 +43,72 @@ class BloqueHorario(models.Model):
                     f"pero elegiste turnos de {self.duracion_turno} min."
                 )
 
+    def obtener_nombre_dia(self):
+        return dict(self.DIAS).get(self.dia_semana, '')
+
+    def generar_turnos(self, semanas):
+        from .turno import Turno
+        hoy = date.today()
+        dias_hasta = (self.dia_semana - hoy.weekday()) % 7
+        proxima_fecha = hoy + timedelta(days=dias_hasta)
+        turnos_creados = []
+
+        for semana in range(1, semanas + 1):
+            fecha_turno = proxima_fecha + timedelta(weeks=semana - 1)
+            hora_actual = self.hora_inicio
+            while (datetime.combine(fecha_turno, hora_actual) + timedelta(minutes=self.duracion_turno)).time() <= self.hora_fin:
+                hora_fin_turno = (datetime.combine(fecha_turno, hora_actual) + timedelta(minutes=self.duracion_turno)).time()
+
+                existe_reservado = Turno.objects.filter(
+                    bloque__medico=self.medico,
+                    fecha=fecha_turno,
+                    hora_inicio=hora_actual,
+                    esta_reservado=True
+                ).exists()
+                existe_mismo_bloque = Turno.objects.filter(
+                    bloque=self,
+                    fecha=fecha_turno,
+                    hora_inicio=hora_actual
+                ).exists()
+
+                if not existe_reservado and not existe_mismo_bloque:
+                    turno = Turno.objects.create(
+                        bloque=self,
+                        fecha=fecha_turno,
+                        hora_inicio=hora_actual,
+                        hora_fin=hora_fin_turno,
+                        esta_activo=True,
+                        esta_reservado=False
+                    )
+                    turnos_creados.append(turno)
+
+                hora_actual = (datetime.combine(fecha_turno, hora_actual) + timedelta(minutes=self.duracion_turno)).time()
+
+        if turnos_creados:
+            self.ultimo_turno_generado = max(t.fecha for t in turnos_creados)
+            self.save(update_fields=['ultimo_turno_generado'])
+        return turnos_creados
+    
+    def validar_superposicion(self, otro_bloque):
+        return self.hora_inicio < otro_bloque.hora_fin and self.hora_fin > otro_bloque.hora_inicio
+
     def desactivar(self):
         #Eliminación lógica del bloque.
         self.activo = False
         self.save()
+        for turno in self.turnos.all():
+            turno.desactivar()
 
     def obtener_turnos_disponibles(self):
-        #Devuelve los turnos disponibles futuros de este bloque.
+        ahora = datetime.now()
         return self.turnos.filter(
-            fecha__gte     = date.today(),
-            esta_reservado = False,
-            esta_activo    = True
+            esta_reservado=False,
+            esta_activo=True
+        ).exclude(
+            fecha=date.today(),
+            hora_inicio__lt=ahora.time()
+        ).filter(
+            fecha__gte=date.today()
         ).order_by('fecha', 'hora_inicio')
 
     def obtener_turnos(self):
@@ -63,3 +117,7 @@ class BloqueHorario(models.Model):
             fecha__gte  = date.today(),
             esta_activo = True
         ).order_by('fecha', 'hora_inicio')
+
+    @staticmethod
+    def obtener_bloques_activos(medico):
+        return BloqueHorario.objects.filter(medico=medico, activo=True)

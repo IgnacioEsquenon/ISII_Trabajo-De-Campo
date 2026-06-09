@@ -18,7 +18,7 @@ class TestGestorPanelPaciente(TestCase):
         )
         bloque        = BloqueHorario.objects.create(
             medico=medico, dia_semana=0,
-            hora_inicio=time(9,0), hora_fin=time(10,0), duracion_turno=30
+            hora_inicio=time(9,0), hora_fin=time(10,0), duracion_turno=30, activo=True
         )
         self.turno    = Turno.objects.create(
             bloque=bloque,
@@ -33,39 +33,39 @@ class TestGestorPanelPaciente(TestCase):
         self.reserva  = Reserva.objects.create(
             turno=self.turno, paciente=self.paciente, estado='activa'
         )
-        self.gestor   = GestorPanelPaciente()
+        # Instanciar el gestor con el paciente
+        self.gestor   = GestorPanelPaciente(self.paciente)
 
     def test_obtener_proximos_turnos(self):
         """obtener_proximos_turnos devuelve reservas activas futuras."""
-        resultado = self.gestor.obtener_proximos_turnos(self.paciente)
+        resultado = self.gestor.obtener_proximos_turnos()
         self.assertIn(self.reserva, resultado)
 
     def test_obtener_proximos_turnos_respeta_cantidad(self):
         """obtener_proximos_turnos respeta el límite de cantidad."""
-        resultado = self.gestor.obtener_proximos_turnos(self.paciente, cantidad=1)
+        resultado = self.gestor.obtener_proximos_turnos(cantidad=1)
         self.assertEqual(len(resultado), 1)
 
     def test_obtener_proximos_turnos_no_incluye_canceladas(self):
         """obtener_proximos_turnos no incluye reservas canceladas."""
         self.reserva.estado = 'cancelada'
         self.reserva.save()
-        resultado = self.gestor.obtener_proximos_turnos(self.paciente)
+        resultado = self.gestor.obtener_proximos_turnos()
         self.assertNotIn(self.reserva, resultado)
 
     def test_obtener_historial_devuelve_todas(self):
         """obtener_historial devuelve todas las reservas del paciente."""
-        resultado = self.gestor.obtener_historial(self.paciente)
+        resultado = self.gestor.obtener_historial()
         self.assertIn(self.reserva, resultado)
 
     def test_obtener_historial_filtra_por_estado(self):
         """obtener_historial filtra correctamente por estado."""
-        resultado = self.gestor.obtener_historial(self.paciente, estado='cancelada')
+        resultado = self.gestor.obtener_historial(estado='cancelada')
         self.assertNotIn(self.reserva, resultado)
 
     def test_obtener_historial_filtra_por_fecha(self):
         """obtener_historial filtra por rango de fechas."""
         resultado = self.gestor.obtener_historial(
-            self.paciente,
             fecha_desde=date.today() + timedelta(days=30)
         )
         self.assertNotIn(self.reserva, resultado)

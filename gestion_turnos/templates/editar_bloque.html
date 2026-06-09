@@ -21,7 +21,7 @@
 
 {% block content %}
 <div class="container">
-  <a href="{% url 'agenda_medico' bloque.medico.id %}" class="btn-volver">← Volver a la agenda</a>
+  <a href="{% url 'configurar_bloques' bloque.medico.id %}" class="btn-volver">← Volver a la agenda</a>
   <div class="card">
     <h1>Editar bloque horario</h1>
     <form method="post">
@@ -44,7 +44,7 @@
       {{ form.non_field_errors }}
 
       <div class="acciones">
-        <a href="{% url 'agenda_medico' bloque.medico.id %}" class="btn-cancelar">Cancelar</a>
+        <a href="{% url 'configurar_bloques' bloque.medico.id %}" class="btn-cancelar">Cancelar</a>
         <button type="submit" class="btn-guardar">Guardar cambios</button>
       </div>
     </form>

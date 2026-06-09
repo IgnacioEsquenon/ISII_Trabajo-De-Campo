@@ -31,44 +31,24 @@ class Reserva(models.Model):
         return f"{self.codigo_reserva} — {self.paciente} — {self.turno}"
 
     def cancelar(self):
-        """
-        Cancela la reserva y maneja el turno según el estado actual del bloque.
-        Si el bloque sigue activo y el turno sigue siendo válido dentro del horario,
-        lo libera para que vuelva a estar disponible.
-        Si el bloque fue editado o eliminado, desactiva el turno.
-        """
+        if self.estado != 'activa':
+            raise ValidationError("Solo se pueden cancelar reservas activas.")
         self.estado = 'cancelada'
         self.save()
-
-        turno  = self.turno
-        bloque = turno.bloque
-
-        # Verificamos si el turno sigue siendo válido dentro del bloque actual
-        hora_dentro_del_bloque = (
-            bloque.hora_inicio <= turno.hora_inicio < bloque.hora_fin
-        )
-
-        # Verificamos si el horario coincide con la duración del turno
-        minutos_desde_inicio = (
-            turno.hora_inicio.hour * 60 + turno.hora_inicio.minute
-        ) - (
-            bloque.hora_inicio.hour * 60 + bloque.hora_inicio.minute
-        )
-        es_multiplo_duracion = minutos_desde_inicio % bloque.duracion_turno == 0
-
-        if bloque.activo and hora_dentro_del_bloque and es_multiplo_duracion:
-            turno.liberar()     # vuelve a estar disponible
-        else:
-            turno.desactivar()  # no vuelve al pool
+        self.turno.liberar()
 
     def confirmar_atencion(self, diagnostico):
         #Marca la reserva como atendida y guarda el diagnóstico.
+        if self.estado != 'activa':
+            raise ValidationError("Solo se puede confirmar atención de una reserva activa.")
         self.estado      = 'atendida'
         self.diagnostico = diagnostico
         self.save()
 
     def es_cancelable(self):
         #Devuelve True si faltan más de 24hs para el turno.
+        if self.estado != 'activa':
+            return False
         ahora       = timezone.now()
         fecha_turno = datetime.combine(self.turno.fecha, self.turno.hora_inicio)
         fecha_turno = timezone.make_aware(fecha_turno)

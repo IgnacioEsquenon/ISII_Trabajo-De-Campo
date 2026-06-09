@@ -47,6 +47,10 @@
     <form method="post">
       {% csrf_token %}
 
+      <label>Nombre de usuario</label>
+      <input type="text" value="{{ paciente.user.username }}" readonly>
+      <p class="hint">El nombre de usuario no puede modificarse.</p>
+
       <label>Nombre</label>
       <input type="text" name="nombre" value="{{ paciente.nombre }}" required>
 
@@ -69,10 +73,6 @@
       </option>
       {% endfor %}
       </select>
-
-      <label>Email</label>
-      <input type="text" value="{{ paciente.user.email }}" readonly>
-      <p class="hint">El email no puede modificarse desde acá.</p>
 
       <button type="submit" class="btn-guardar">Guardar cambios</button>
     </form>

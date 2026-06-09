@@ -22,8 +22,10 @@ class Paciente(models.Model):
     def nombre_completo(self):
         return f"{self.nombre} {self.apellido}"
 
-    def actualizar_datos(self, telefono, obra_social):
+    def actualizar_datos(self, nombre, apellido, telefono, obra_social):
         """Actualiza los datos del paciente."""
+        self.nombre     = nombre
+        self.apellido   = apellido
         self.telefono    = telefono
         self.obra_social = obra_social
         self.save()
