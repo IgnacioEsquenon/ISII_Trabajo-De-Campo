@@ -99,7 +99,7 @@ pac_gonzalez  = crear_paciente("pac_gonzalez", "Sofia", "Gonzalez", "20678901", 
 pac_diaz      = crear_paciente("pac_diaz", "Daniel", "Diaz", "20789012", os_ioscor)
 pac_torres    = crear_paciente("pac_torres", "Lucia", "Torres", "20890123", os_osde)
 
-# ── Bloques Horarios (Lunes a Viernes 8-12 y L/M/X 16-19) ────
+# ── Bloques Horarios (solo para los medicos con reservas) ─────
 hoy = date.today()
 def crear_bloque(medico, dia_semana, hora_inicio, hora_fin, duracion):
     return BloqueHorario.objects.create(
@@ -109,35 +109,33 @@ def crear_bloque(medico, dia_semana, hora_inicio, hora_fin, duracion):
     )
 
 bloques = []
-for medico in [med_fernandez, med_gonzalez, med_rodriguez, med_martinez, med_garcia, med_lopez, med_ramirez, med_torres, med_diaz, med_sosa]:
-    for dia in range(0, 5):
+# Solo los dos medicos principales tendran bloques y turnos
+for medico in [med_fernandez, med_gonzalez]:
+    for dia in range(0, 5):                 # Lunes a Viernes 8-12
         bloques.append(crear_bloque(medico, dia, time(8,0), time(12,0), 30))
-    for dia in [0, 2, 4]:
+    for dia in [0, 2, 4]:                   # Lunes, Miercoles y Viernes 16-19
         bloques.append(crear_bloque(medico, dia, time(16,0), time(19,0), 30))
 
-# ── Generar turnos futuros ──────────────────────────────────────
+# ── Generar turnos futuros (solo 2 semanas en lugar de 4) ─────
 for bloque in bloques:
-    bloque.generar_turnos(semanas=4)
+    bloque.generar_turnos(semanas=2)
 
-# ── Generar turnos PASADOS (hace 2 semanas) para tener donde reservar ──
-fecha_pasada_inicio = hoy - timedelta(days=14)
-while fecha_pasada_inicio.weekday() >= 5:
-    fecha_pasada_inicio -= timedelta(days=1)
-
-for bloque in bloques:
-    for dia_offset in range(5):
-        fecha = fecha_pasada_inicio + timedelta(days=dia_offset)
-        if fecha.weekday() == bloque.dia_semana:
-            hora_actual = bloque.hora_inicio
-            while hora_actual < bloque.hora_fin:
-                hora_fin = (datetime.combine(fecha, hora_actual) + timedelta(minutes=bloque.duracion_turno)).time()
-                if not Turno.objects.filter(bloque=bloque, fecha=fecha, hora_inicio=hora_actual).exists():
-                    Turno.objects.create(
-                        bloque=bloque, fecha=fecha,
-                        hora_inicio=hora_actual, hora_fin=hora_fin,
-                        esta_reservado=False, esta_activo=True
-                    )
-                hora_actual = (datetime.combine(fecha, hora_actual) + timedelta(minutes=bloque.duracion_turno)).time()
+# ── Funcion auxiliar para crear turnos sueltos (para reservas pasadas) ──
+def crear_turno_suelto(medico, fecha_turno, hora_turno, duracion=30):
+    """Crea un turno individual en una fecha y hora especifica."""
+    # Buscar un bloque que coincida con el dia de la semana de la fecha
+    for bloque in BloqueHorario.objects.filter(medico=medico, dia_semana=fecha_turno.weekday(), activo=True):
+        # Verificar que el horario este dentro del bloque
+        if bloque.hora_inicio <= hora_turno and (datetime.combine(fecha_turno, hora_turno) + timedelta(minutes=duracion)).time() <= bloque.hora_fin:
+            if not Turno.objects.filter(bloque=bloque, fecha=fecha_turno, hora_inicio=hora_turno).exists():
+                return Turno.objects.create(
+                    bloque=bloque, fecha=fecha_turno,
+                    hora_inicio=hora_turno,
+                    hora_fin=(datetime.combine(fecha_turno, hora_turno) + timedelta(minutes=duracion)).time(),
+                    esta_reservado=False, esta_activo=True
+                )
+    # Si no hay bloque que coincida, creamos un turno sin bloque (poco frecuente)
+    return None
 
 # ── Funcion auxiliar para crear reservas ────────────────────────
 def crear_reserva(paciente, medico, fecha_turno, hora_turno, estado, diagnostico="", motivo=""):
@@ -145,6 +143,9 @@ def crear_reserva(paciente, medico, fecha_turno, hora_turno, estado, diagnostico
         bloque__medico=medico, fecha=fecha_turno, hora_inicio=hora_turno,
         esta_reservado=False, esta_activo=True
     ).first()
+    if not turno:
+        # Si no hay turno generado por el bloque, lo creamos suelto
+        turno = crear_turno_suelto(medico, fecha_turno, hora_turno)
     if turno:
         turno.bloquear()
         return Reserva.objects.create(
@@ -156,6 +157,10 @@ def crear_reserva(paciente, medico, fecha_turno, hora_turno, estado, diagnostico
         return None
 
 # ── Reservas pasadas (atendidas) ────────────────────────────────
+fecha_pasada_inicio = hoy - timedelta(days=14)
+while fecha_pasada_inicio.weekday() >= 5:   # Asegurar que sea un dia habil
+    fecha_pasada_inicio -= timedelta(days=1)
+
 # Lunes
 crear_reserva(pac_gomez, med_fernandez, fecha_pasada_inicio, time(8,0), "atendida", "Hipertension controlada. Se ajusta medicacion.", "Control de presion")
 crear_reserva(pac_lopez, med_fernandez, fecha_pasada_inicio, time(9,0), "atendida", "Ecocardiograma normal.", "Dolor en el pecho")
@@ -164,50 +169,35 @@ crear_reserva(pac_gomez, med_fernandez, fecha_pasada_inicio + timedelta(days=1),
 crear_reserva(pac_ramirez, med_gonzalez, fecha_pasada_inicio + timedelta(days=1), time(8,0), "atendida", "Dermatitis atopica. Se prescribe crema.", "Erupcion en brazos")
 # Miercoles
 crear_reserva(pac_gomez, med_fernandez, fecha_pasada_inicio + timedelta(days=2), time(11,0), "atendida", "Electrocardiograma con resultado normal.", "Dolor toracico")
-crear_reserva(pac_martinez, med_martinez, fecha_pasada_inicio + timedelta(days=2), time(8,0), "atendida", "Sindrome gripal. Reposo y paracetamol.", "Fiebre y tos")
 # Jueves
-crear_reserva(pac_gomez, med_torres, fecha_pasada_inicio + timedelta(days=3), time(9,0), "atendida", "Esguince de tobillo. Inmovilizacion.", "Dolor en tobillo")
-crear_reserva(pac_torres, med_ramirez, fecha_pasada_inicio + timedelta(days=3), time(8,0), "atendida", "Fondo de ojo normal. Se receta lentes.", "Vision borrosa")
+crear_reserva(pac_gomez, med_gonzalez, fecha_pasada_inicio + timedelta(days=3), time(9,0), "atendida", "Revision de lunar. Sin cambios.", "Control dermatologico")
 # Viernes
-crear_reserva(pac_gomez, med_diaz, fecha_pasada_inicio + timedelta(days=4), time(10,0), "atendida", "Revision de tratamiento dermatologico.", "Control de acne")
-crear_reserva(pac_lopez, med_diaz, fecha_pasada_inicio + timedelta(days=4), time(8,0), "atendida", "Acne juvenil. Tratamiento topico.", "Consulta por acne")
-crear_reserva(pac_fernandez, med_rodriguez, fecha_pasada_inicio, time(10,0), "atendida", "Control pediatrico de rutina. Desarrollo normal.", "Control general")
-crear_reserva(pac_gonzalez, med_garcia, fecha_pasada_inicio + timedelta(days=1), time(16,0), "atendida", "Papanicolaou normal.", "Control ginecologico")
-crear_reserva(pac_diaz, med_lopez, fecha_pasada_inicio, time(11,0), "atendida", "Cefalea tensional. Sin signos neurologicos.", "Dolor de cabeza persistente")
+crear_reserva(pac_lopez, med_fernandez, fecha_pasada_inicio + timedelta(days=4), time(8,0), "atendida", "Control de presion. Valores normales.", "Chequeo general")
 
 # ── Reservas canceladas ─────────────────────────────────────────
 fecha_futura_cercana = hoy + timedelta(days=(7 - hoy.weekday()) % 7)
-# Canceladas pasadas (para historial)
+# Canceladas pasadas
 crear_reserva(pac_gomez, med_fernandez, fecha_pasada_inicio + timedelta(days=2), time(8,0), "cancelada", motivo="No pude asistir")
-crear_reserva(pac_gomez, med_gonzalez, fecha_pasada_inicio + timedelta(days=3), time(16,0), "cancelada", motivo="Cambio de turno")
 # Canceladas futuras
-crear_reserva(pac_ramirez, med_sosa, fecha_futura_cercana + timedelta(days=2), time(8,0), "cancelada", motivo="No podre asistir")
-crear_reserva(pac_fernandez, med_gonzalez, fecha_futura_cercana + timedelta(days=1), time(16,0), "cancelada", motivo="Cambio de turno")
+crear_reserva(pac_ramirez, med_gonzalez, fecha_futura_cercana + timedelta(days=2), time(8,0), "cancelada", motivo="No podre asistir")
 
 # ── Reservas activas futuras ────────────────────────────────────
-# Lunes
+# Lunes (varias citas para mostrar la agenda cargada)
 crear_reserva(pac_gomez, med_fernandez, fecha_futura_cercana, time(8,0), "activa", motivo="Control cardiaco")
 crear_reserva(pac_lopez, med_fernandez, fecha_futura_cercana, time(8,30), "activa", motivo="Electrocardiograma")
 crear_reserva(pac_martinez, med_fernandez, fecha_futura_cercana, time(9,0), "activa", motivo="Dolor en el pecho")
 crear_reserva(pac_gonzalez, med_fernandez, fecha_futura_cercana, time(9,30), "activa", motivo="Control de presion")
-crear_reserva(pac_gomez, med_fernandez, fecha_futura_cercana, time(10,0), "activa", motivo="Colesterol alto")
+crear_reserva(pac_diaz, med_fernandez, fecha_futura_cercana, time(10,0), "activa", motivo="Colesterol alto")
 # Martes
 crear_reserva(pac_gomez, med_gonzalez, fecha_futura_cercana + timedelta(days=1), time(8,0), "activa", motivo="Consulta por lunar")
-crear_reserva(pac_diaz, med_gonzalez, fecha_futura_cercana + timedelta(days=1), time(8,30), "activa", motivo="Control de piel")
+crear_reserva(pac_torres, med_gonzalez, fecha_futura_cercana + timedelta(days=1), time(8,30), "activa", motivo="Control de piel")
 # Miercoles
-crear_reserva(pac_gomez, med_martinez, fecha_futura_cercana + timedelta(days=2), time(8,0), "activa", motivo="Dolor abdominal")
-crear_reserva(pac_torres, med_rodriguez, fecha_futura_cercana, time(10,0), "activa", motivo="Control pediatrico")
+crear_reserva(pac_gomez, med_fernandez, fecha_futura_cercana + timedelta(days=2), time(8,0), "activa", motivo="Resultados de analisis")
+crear_reserva(pac_fernandez, med_fernandez, fecha_futura_cercana + timedelta(days=2), time(9,0), "activa", motivo="Chequeo general")
 # Jueves
-crear_reserva(pac_gomez, med_sosa, fecha_futura_cercana + timedelta(days=3), time(9,0), "activa", motivo="Chequeo general")
-crear_reserva(pac_lopez, med_garcia, fecha_futura_cercana + timedelta(days=1), time(16,0), "activa", motivo="Control ginecologico")
+crear_reserva(pac_lopez, med_gonzalez, fecha_futura_cercana + timedelta(days=3), time(8,0), "activa", motivo="Consulta dermatologica")
 # Viernes
-crear_reserva(pac_gomez, med_gonzalez, fecha_futura_cercana + timedelta(days=4), time(9,0), "activa", motivo="Consulta por manchas en la piel")
-crear_reserva(pac_ramirez, med_lopez, fecha_futura_cercana, time(11,0), "activa", motivo="Consulta neurologica")
-crear_reserva(pac_fernandez, med_ramirez, fecha_futura_cercana + timedelta(days=3), time(8,0), "activa", motivo="Control de lentes")
-crear_reserva(pac_martinez, med_torres, fecha_futura_cercana + timedelta(days=2), time(9,0), "activa", motivo="Dolor de rodilla")
-crear_reserva(pac_gonzalez, med_diaz, fecha_futura_cercana + timedelta(days=4), time(8,0), "activa", motivo="Consulta dermatologica")
-crear_reserva(pac_diaz, med_sosa, fecha_futura_cercana + timedelta(days=2), time(8,0), "activa", motivo="Chequeo general")
-crear_reserva(pac_torres, med_fernandez, fecha_futura_cercana + timedelta(days=3), time(8,0), "activa", motivo="Control cardiaco")
+crear_reserva(pac_gomez, med_gonzalez, fecha_futura_cercana + timedelta(days=4), time(9,0), "activa", motivo="Control de manchas en la piel")
 
 # ── Verificacion final ──────────────────────────────────────────
 from django.contrib.auth import authenticate
