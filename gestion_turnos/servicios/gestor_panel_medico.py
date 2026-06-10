@@ -27,8 +27,7 @@ class GestorPanelMedico:
             turno__bloque__medico=self.medico,
             estado='activa',
             turno__fecha__gte=fecha_inicio,
-            turno__fecha__lte=fecha_fin,
-            turno__esta_activo=True
+            turno__fecha__lte=fecha_fin
         ).select_related('turno', 'paciente').order_by('turno__fecha', 'turno__hora_inicio')
 
         agenda = {}

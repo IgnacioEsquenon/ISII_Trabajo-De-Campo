@@ -1,8 +1,9 @@
 from pathlib import Path
+from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent  # ← un nivel más arriba por la carpeta settings
 
-SECRET_KEY = 'contraadmin'
+SECRET_KEY = config('SECRET_KEY')
 
 INSTALLED_APPS = [
     'django.contrib.admin',

@@ -130,8 +130,8 @@ class TestGestorAgendaEliminarBloque(TestCase):
             duracion_turno=30, activo=True
         )
 
-    def test_CP09_eliminar_bloque_se_desactiva(self):
-        """CP-09: Bloque sin turnos reservados se desactiva correctamente."""
+    def test_eliminar_bloque_se_desactiva(self):
+        """Bloque sin turnos reservados se desactiva correctamente."""
         Turno.objects.create(
             bloque=self.bloque,
             fecha=date.today() + timedelta(days=7),
@@ -142,8 +142,8 @@ class TestGestorAgendaEliminarBloque(TestCase):
         self.bloque.refresh_from_db()
         self.assertFalse(self.bloque.activo)
 
-    def test_CP10_eliminar_bloque_desactiva_turnos(self):
-        """CP-10: Al eliminar el bloque se desactivan sus turnos."""
+    def test_eliminar_bloque_desactiva_turnos(self):
+        """Al eliminar el bloque se desactivan sus turnos."""
         turno = Turno.objects.create(
             bloque=self.bloque,
             fecha=date.today() + timedelta(days=7),
@@ -154,8 +154,8 @@ class TestGestorAgendaEliminarBloque(TestCase):
         turno.refresh_from_db()
         self.assertFalse(turno.esta_activo)
 
-    def test_CP11_eliminar_bloque_mantiene_reservas(self):
-        """CP-11: Al eliminar el bloque los turnos reservados se desactivan pero no se borran."""
+    def test_eliminar_bloque_mantiene_reservas(self):
+        """Al eliminar el bloque los turnos reservados se desactivan pero no se borran."""
         paciente = Paciente.objects.create(
             user=self.medico.user, nombre='Paciente', apellido='Test', dni='11111111'
         )
@@ -168,12 +168,11 @@ class TestGestorAgendaEliminarBloque(TestCase):
         Reserva.objects.create(turno=turno, paciente=paciente)
         self.gestor.eliminar_bloque_horario(self.bloque)
         turno.refresh_from_db()
-        # El turno se desactiva pero sigue existiendo y sigue reservado
         self.assertFalse(turno.esta_activo)
         self.assertTrue(turno.esta_reservado)
 
-    def test_CP12_eliminar_bloque_con_reservados_no_lanza_error(self):
-        """CP-12: Bloque con turnos reservados se elimina sin errores (diseño final)."""
+    def test_eliminar_bloque_con_reservados_no_lanza_error(self):
+        """Bloque con turnos reservados se elimina sin errores (diseño final)."""
         paciente = Paciente.objects.create(
             user=self.medico.user, nombre='Paciente', apellido='Test', dni='22222222'
         )
@@ -184,7 +183,6 @@ class TestGestorAgendaEliminarBloque(TestCase):
             esta_reservado=True, esta_activo=True
         )
         Reserva.objects.create(turno=turno, paciente=paciente)
-        # No debe lanzar error
         self.gestor.eliminar_bloque_horario(self.bloque)
         self.bloque.refresh_from_db()
         self.assertFalse(self.bloque.activo)
@@ -206,8 +204,8 @@ class TestGestorAgendaEditarBloque(TestCase):
             duracion_turno=30, activo=True
         )
 
-    def test_CP13_editar_bloque_crea_nuevo_bloque(self):
-        """CP-13: Editar bloque desactiva el original y crea uno nuevo."""
+    def test_editar_bloque_crea_nuevo_bloque(self):
+        """Editar bloque desactiva el original y crea uno nuevo."""
         nuevo = self.gestor.editar_bloque_horario(
             bloque=self.bloque, dia_semana=0,
             hora_inicio=time(9,0), hora_fin=time(11,0), duracion_turno=60
@@ -217,8 +215,8 @@ class TestGestorAgendaEditarBloque(TestCase):
         self.assertTrue(nuevo.activo)                 # nuevo activo
         self.assertNotEqual(self.bloque.pk, nuevo.pk) # son distintos
 
-    def test_CP14_editar_bloque_regenera_turnos(self):
-        """CP-14: Al editar, el nuevo bloque genera turnos correctamente."""
+    def test_editar_bloque_regenera_turnos(self):
+        """Al editar, el nuevo bloque genera turnos correctamente."""
         self.gestor.editar_bloque_horario(
             bloque=self.bloque, dia_semana=0,
             hora_inicio=time(9,0), hora_fin=time(11,0), duracion_turno=30
@@ -229,8 +227,8 @@ class TestGestorAgendaEditarBloque(TestCase):
             Turno.objects.filter(bloque=nuevo_bloque, esta_reservado=False).count(), 16
         )
 
-    def test_CP15_editar_bloque_respeta_turnos_reservados(self):
-        """CP-15: Al editar no se regenera turno en franja ya reservada."""
+    def test_editar_bloque_respeta_turnos_reservados(self):
+        """Al editar no se regenera turno en franja ya reservada."""
         paciente = Paciente.objects.create(
             user=self.medico.user, nombre='Paciente', apellido='Test', dni='33333333'
         )
@@ -266,8 +264,8 @@ class TestGestorAgendaObtener(TestCase):
         )
         self.gestor = GestorAgenda(self.medico)
 
-    def test_CP16_obtener_estructura_bloques_agrupa_por_dia(self):
-        """CP-16: obtener_estructura_bloques devuelve dict agrupado por día."""
+    def test_obtener_estructura_bloques_agrupa_por_dia(self):
+        """obtener_estructura_bloques devuelve dict agrupado por día."""
         BloqueHorario.objects.create(
             medico=self.medico, dia_semana=0,
             hora_inicio=time(9,0), hora_fin=time(10,0),
@@ -276,8 +274,8 @@ class TestGestorAgendaObtener(TestCase):
         resultado = self.gestor.obtener_estructura_bloques()
         self.assertIn('Lunes', resultado)
 
-    def test_CP17_obtener_estructura_bloques_no_incluye_inactivos(self):
-        """CP-17: obtener_estructura_bloques no incluye bloques desactivados."""
+    def test_obtener_estructura_bloques_no_incluye_inactivos(self):
+        """obtener_estructura_bloques no incluye bloques desactivados."""
         BloqueHorario.objects.create(
             medico=self.medico, dia_semana=0,
             hora_inicio=time(9,0), hora_fin=time(10,0),

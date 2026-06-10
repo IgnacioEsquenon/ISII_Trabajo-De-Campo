@@ -3,7 +3,7 @@ from datetime import date
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from datetime import date
-
+from django.http import Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -122,7 +122,13 @@ def detalle_medico(request, medico_id):
 
 @login_required
 def confirmar_turno(request, turno_id):
-    paciente = get_paciente(request)
+    # Verificar que el usuario tenga perfil de paciente, si no, redirigir con aviso
+    try:
+        paciente = get_paciente(request)
+    except Http404:
+        messages.error(request, 'Debe iniciar sesión como paciente para reservar un turno.')
+        return redirect('home_principal')
+    
     turno = get_object_or_404(Turno, pk=turno_id)
 
     if turno.esta_reservado:

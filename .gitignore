@@ -12,3 +12,6 @@ db.sqlite3
 
 # Base de datos de produccion 
 sistema_medico/settings/production.py
+
+# Variables de entorno
+.env
